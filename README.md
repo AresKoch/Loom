@@ -6,6 +6,10 @@ Folders flow left to right as columns joined by wires, so you always see the pat
 
 ![Files, git and Claude side by side](docs/loom-panes.jpg)
 
+## Download
+
+Get **Loom-windows.zip** from the [latest release](../../releases/latest), unzip it, and run `Loom.exe`. Windows will warn that the app is unsigned: click "More info", then "Run anyway". `READ ME FIRST.txt` inside the folder covers the rest.
+
 ## What it does
 
 - **Files.** Pick a root folder. Hover a folder to look inside, or a file to preview it (text, code, PDF, pictures, SolidWorks parts). Copy, cut, paste, rename, drag to a USB drive, print.
@@ -35,9 +39,11 @@ npm start
 
 ## Make a portable copy
 
-1. Download the Electron 45 Windows x64 zip from the Electron releases page and unzip it.
-2. Pack the source: `npx @electron/asar pack . app.asar` (run it on a folder that holds only `app.html`, the `.js` files and `package.json`).
-3. Put `app.asar` in the unzipped `resources` folder and rename `electron.exe` to `Loom.exe`.
+```
+npm run pack
+```
+
+The app lands in `dist/Loom-win32-x64`. Zip that folder and attach it to a release.
 
 ## Files
 

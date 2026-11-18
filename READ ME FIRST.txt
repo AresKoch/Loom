@@ -1,0 +1,47 @@
+LOOM
+A file browser with Claude and git built in.
+
+WHAT YOU NEED
+- Windows 10 or 11, 64 bit.
+- Claude Code on this PC, signed in with YOUR OWN Claude account.
+  The easiest way: install the Claude desktop app from claude.ai/download,
+  sign in, and open the Code tab once. Loom finds it on its own.
+  Loom does not come with an account and stores no passwords or keys.
+- For the GIT pane: GitHub Desktop or Git for Windows.
+
+HOW TO START
+1. Unzip this whole folder somewhere on your own PC (not inside Program Files).
+2. Run "Loom.exe".
+   Windows may show "Windows protected your PC" because the app is not
+   signed. Click "More info", then "Run anyway".
+3. Click "Choose folder..." and pick the root folder you want to work in.
+   You can change it any time from the button at the top left.
+4. If the Claude pane says "not signed in", click SETTINGS at the top,
+   then "Sign in to Claude...".
+
+USING IT
+- FILES, GIT and CLAUDE at the top are switches. Turn on any two or all three.
+  Drag the bar between two panes to resize. Double click the bar to reset it.
+- Files: folders flow left (root) to right (deepest). Rest the mouse on a
+  folder to see inside it, or on a file to preview it.
+- Claude: it always knows which folder is open and which files are selected,
+  so you can say "what do these do" or "what is in this folder".
+- When Claude saves a file, the folders on the way to it pulse in the tree.
+  Click the "Writing ..." line in the chat to jump straight to the file.
+- Git: tick files, type a summary, Commit. The third button at the top of the
+  pane fetches, pulls or pushes. Push always asks first.
+- SETTINGS, Theme: seven looks to pick from.
+- The keys along the bottom of the window cover everything else.
+
+WHAT CLAUDE IS ALLOWED TO DO (pick in the Claude pane)
+- LOOK: read and answer. Changes nothing. This is the default.
+- EDIT: can create and change files in your root folder.
+- AUTO: can also run commands Claude Code judges safe.
+
+DELETING
+- Delete inside your root folder does not destroy anything. It moves the
+  item into a ".folder-map-trash" folder in the root, so you can drag it back.
+- Delete on a USB drive is permanent. It asks first.
+
+Your chats, settings and chosen root folder stay on your own PC.
+Claude usage counts against your own Claude plan.

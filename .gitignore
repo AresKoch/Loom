@@ -3,5 +3,6 @@ dist/
 out/
 *.asar
 *.zip
+package-lock.json
 .folder-map/
 .folder-map-trash/
