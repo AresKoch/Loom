@@ -1,0 +1,7 @@
+node_modules/
+dist/
+out/
+*.asar
+*.zip
+.folder-map/
+.folder-map-trash/

@@ -1,0 +1,14 @@
+{
+  "name": "loom",
+  "productName": "Loom",
+  "version": "1.3.0",
+  "description": "A file browser with Claude Code and git built in. Folders flow left to right as wired columns.",
+  "main": "main.js",
+  "author": "Ares Kochendorfer",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^45.3.4"
+  }
+}

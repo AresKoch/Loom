@@ -1,0 +1,184 @@
+// Claude inside Loom.
+// Runs the Claude Code program already installed on this PC, headless, one
+// message at a time, and turns its output stream into small events for the panel.
+// It uses the login Claude Code already has; no keys are stored or read here.
+const fs = require('fs');
+const path = require('path');
+const { spawn, execFile } = require('child_process');
+
+// What each panel mode lets Claude do. Nothing here can pop a prompt, so
+// anything a mode does not allow is simply refused and reported back.
+const MODES = {
+  look: ['--permission-mode', 'manual', '--permission-prompts', 'none'],        // read and answer only
+  edit: ['--permission-mode', 'acceptEdits', '--permission-prompts', 'none'],   // may create and edit files
+  auto: ['--permission-mode', 'auto', '--permission-prompts', 'none'],          // may also run commands it judges safe
+};
+const MODELS = new Set(['fable', 'opus', 'sonnet', 'haiku']);
+const EFFORTS = new Set(['low', 'medium', 'high', 'xhigh', 'max']);
+const WRITERS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit']);
+
+const PANEL_NOTE =
+  'You are running inside Loom, a desktop app for browsing folders with you built in. ' +
+  'Your replies appear in a chat pane next to the file browser, so keep them compact: short sentences, short lists, no wide tables. ' +
+  'Each message from the user starts with a [Loom] block saying which folder they have open and which files they have selected. ' +
+  'When they say "this", "these", "here" or "this folder", they mean those. Use full paths from that block when you read or change files.';
+
+function newestDesktopBuild() {
+  const base = path.join(process.env.APPDATA || '', 'Claude', 'claude-code');
+  let best = null;
+  try {
+    for (const ver of fs.readdirSync(base)) {
+      for (const build of fs.readdirSync(path.join(base, ver))) {
+        const exe = path.join(base, ver, build, 'claude.exe');
+        try {
+          const st = fs.statSync(exe);
+          const key = ver.split('.').map(n => String(n).padStart(6, '0')).join('.');
+          if (!best || key > best.key || (key === best.key && st.mtimeMs > best.mtime)) best = { exe, key, mtime: st.mtimeMs };
+        } catch (e) { /* not a build folder */ }
+      }
+    }
+  } catch (e) { /* desktop app not installed */ }
+  return best && best.exe;
+}
+
+// Where is Claude Code on this PC? An explicit path wins, then a normal install, then the desktop app's copy.
+function findClaude(explicit) {
+  const home = process.env.USERPROFILE || '';
+  const tries = [explicit, process.env.FOLDERMAP_CLAUDE,
+    path.join(home, '.local', 'bin', 'claude.exe'),
+    path.join(process.env.APPDATA || '', 'npm', 'claude.cmd'),
+    newestDesktopBuild()];
+  for (const t of tries) { try { if (t && fs.statSync(t).isFile()) return t; } catch (e) { /* next */ } }
+  return null;
+}
+
+function short(s, n) { s = String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+function toolLine(name, input) {
+  input = input || {};
+  const file = p => (p ? String(p).split(/[\\/]/).pop() : '');
+  switch (name) {
+    case 'Read': return 'Reading ' + file(input.file_path);
+    case 'Edit': case 'MultiEdit': case 'NotebookEdit': return 'Editing ' + file(input.file_path || input.notebook_path);
+    case 'Write': return 'Writing ' + file(input.file_path);
+    case 'Glob': return 'Looking for ' + short(input.pattern, 60);
+    case 'Grep': return 'Searching for ' + short(input.pattern, 60);
+    case 'Bash': case 'PowerShell': return 'Running ' + short(input.command, 90);
+    case 'WebSearch': return 'Searching the web: ' + short(input.query, 70);
+    case 'WebFetch': return 'Opening ' + short(input.url, 70);
+    case 'Task': case 'Agent': return 'Starting a helper: ' + short(input.description, 60);
+    case 'Skill': return 'Using skill ' + short(input.skill, 40);
+    default: return 'Using ' + name;
+  }
+}
+
+// getRoot() returns the folder Claude works from (the app's current root folder).
+function create({ getRoot, claudePath }) {
+  let child = null;
+
+  function status() {
+    const exe = findClaude(claudePath);
+    return new Promise(resolve => {
+      if (!exe) return resolve({ found: false, loggedIn: false });
+      execFile(exe, ['auth', 'status'], { windowsHide: true, timeout: 20000, shell: exe.endsWith('.cmd') }, (err, out) => {
+        let info = {};
+        try { info = JSON.parse(out); } catch (e) { /* older build prints text */ }
+        resolve({ found: true, loggedIn: !!info.loggedIn, plan: info.subscriptionType || null, email: info.email || null, program: exe });
+      });
+    });
+  }
+
+  // Opens Claude Code's own sign in, in its own console window. The app never sees the password.
+  function login() {
+    const exe = findClaude(claudePath);
+    if (!exe) return { ok: false, error: 'Claude Code is not installed on this PC.' };
+    spawn('cmd.exe', ['/c', 'start', 'Claude Code sign in', 'cmd', '/k', exe, 'auth', 'login'], { detached: true, stdio: 'ignore', windowsHide: false }).unref();
+    return { ok: true };
+  }
+
+  // Send one message. emit() gets: init, turn, text, tool, toolresult, usage, done.
+  function send({ prompt, sessionId, mode, model, effort, folder, selected, history }, emit) {
+    const root = getRoot();
+    if (child) { emit({ t: 'done', error: 'Claude is still working on the last message.' }); return; }
+    if (!root) { emit({ t: 'done', error: 'Choose a root folder first.' }); return; }
+    const exe = findClaude(claudePath);
+    if (!exe) {
+      emit({ t: 'done', error: 'Claude Code is not installed on this PC. Install the Claude desktop app (or Claude Code) and sign in, then try again.' });
+      return;
+    }
+    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages',
+      ...(MODES[mode] || MODES.look), '--append-system-prompt', PANEL_NOTE];
+    if (MODELS.has(model)) args.push('--model', model);
+    if (EFFORTS.has(effort)) args.push('--effort', effort);
+    if (sessionId) args.push('--resume', sessionId);
+
+    const sel = (selected || []).slice(0, 60);
+    const context = '[Loom]\nRoot folder: ' + root + '\nOpen folder: ' + (folder || root) +
+      (sel.length ? '\nSelected:\n' + sel.map(p => '- ' + p).join('\n') : '\nSelected: nothing') + '\n[/Loom]\n\n';
+
+    // Always run from the root folder so one conversation can be resumed from any subfolder
+    // and picks up that folder's CLAUDE.md and memory.
+    const env = { ...process.env };
+    delete env.ELECTRON_RUN_AS_NODE;
+    child = spawn(exe, args, { cwd: root, windowsHide: true, env, stdio: ['pipe', 'pipe', 'pipe'], shell: exe.endsWith('.cmd') });
+    const me = child;
+    let buf = '', errText = '', finished = false, session = sessionId || null, sawText = false;
+
+    const finish = ev => { if (finished) return; finished = true; if (child === me) child = null; emit({ t: 'done', session, ...ev }); };
+    const line = raw => {
+      let m; try { m = JSON.parse(raw); } catch (e) { return; }
+      if (m.session_id) session = m.session_id;
+      if (m.type === 'rate_limit_event' && m.rate_limit_info) {
+        const w = {}, src = m.rate_limit_info.unifiedWindows || {};
+        for (const k of Object.keys(src)) if (src[k] && typeof src[k].utilization === 'number') w[k] = { u: src[k].utilization, reset: src[k].resetsAt || null };
+        if (Object.keys(w).length) emit({ t: 'usage', windows: w });
+        return;
+      }
+      if (m.parent_tool_use_id) return;                       // a helper agent's chatter: keep the panel quiet
+      if (m.type === 'system' && m.subtype === 'init') emit({ t: 'init', session, model: m.model });
+      else if (m.type === 'stream_event' && m.event && m.event.type === 'content_block_delta' && m.event.delta.type === 'text_delta') {
+        sawText = true; emit({ t: 'text', text: m.event.delta.text });
+      }
+      else if (m.type === 'stream_event' && m.event && m.event.type === 'message_start') emit({ t: 'turn', model: m.event.message && m.event.message.model });
+      else if (m.type === 'assistant' && m.message && Array.isArray(m.message.content)) {
+        for (const b of m.message.content) if (b.type === 'tool_use') {
+          // For a tool that saves a file, pass the path along so the window can show where it went.
+          const inp = b.input || {}, write = WRITERS.has(b.name), fp = write ? (inp.file_path || inp.notebook_path) : null;
+          emit({ t: 'tool', id: b.id, line: toolLine(b.name, inp), write: write && !!fp, path: fp ? path.resolve(root, String(fp)) : null });
+        }
+      }
+      else if (m.type === 'user' && m.message && Array.isArray(m.message.content)) {
+        for (const b of m.message.content) if (b.type === 'tool_result') emit({ t: 'toolresult', id: b.tool_use_id, error: !!b.is_error });
+      }
+      else if (m.type === 'result' || (m.stop_reason !== undefined && m.total_cost_usd !== undefined)) {
+        const denials = (m.permission_denials || []).map(d => toolLine(d.tool_name, d.tool_input));
+        finish({ error: m.is_error ? short(m.result || 'Claude stopped with an error.', 400) : null,
+          text: sawText ? null : (m.result || null), denials });
+      }
+    };
+    me.stdout.setEncoding('utf8');
+    me.stdout.on('data', d => { buf += d; let i; while ((i = buf.indexOf('\n')) >= 0) { const l = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (l) line(l); } });
+    me.stderr.setEncoding('utf8');
+    me.stderr.on('data', d => { errText = (errText + d).slice(-2000); });
+    me.on('error', e => finish({ error: 'Could not start Claude: ' + e.message }));
+    me.on('close', code => {
+      if (buf.trim()) line(buf.trim());
+      finish(me.stopped ? { stopped: true } : { error: code ? short(errText || 'Claude exited with code ' + code, 400) : null });
+    });
+    me.stdin.on('error', () => {});
+    // A shared chat picked up on a different PC has no local session to resume, so the
+    // conversation so far is handed over as text at the start of a new one.
+    const earlier = history ? '[Earlier in this shared chat, carried over from another computer]\n' + history + '\n[/Earlier]\n\n' : '';
+    me.stdin.end(earlier + context + String(prompt || ''));
+  }
+
+  function stop() {
+    if (!child) return { ok: true };
+    child.stopped = true;
+    try { execFile('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true }, () => {}); } catch (e) { try { child.kill(); } catch (e2) { /* gone */ } }
+    return { ok: true };
+  }
+
+  return { status, login, send, stop, busy: () => !!child };
+}
+
+module.exports = { create };
