@@ -277,7 +277,7 @@ body:not([data-solo=files]) #stage::after{content:"";position:absolute;top:0;bot
 .grip::before{content:"";width:3px;height:100%;border-radius:2px;background:rgba(var(--ink),.16);transition:background .15s,width .15s}
 .grip:hover::before,body.sizing .grip.live::before{background:var(--a1);width:5px}
 #main>.first>.grip{left:auto;right:1px}
-#main>.grow>.grip,body:not([data-solo=""]) .grip{display:none}
+#main>.pgrow>.grip,body:not([data-solo=""]) .grip{display:none}
 .cin{min-width:0}
 .gbar,.gbody{min-width:0;overflow:hidden}
 .gbar{flex:none}
@@ -443,6 +443,64 @@ body[data-kf=git] .col.act{border-color:var(--line2)}
 .dl.hunk .t{padding-left:100px}
 .gnote{color:var(--dim);padding:40px 20px;text-align:center;font-family:var(--mono);font-size:12.5px;line-height:1.7;white-space:pre-wrap}
 .gnote b{display:block;color:var(--mid);font-size:16px;margin-bottom:6px}
+/* The git pane reflows when it is narrow, so nothing is cut off: the list stacks above the diff. */
+#git{container:gitp/inline-size}
+.gmain{container:gmain/inline-size}
+.gpick{min-width:0;flex:1 1 150px}
+#ghead{max-height:34%;overflow:auto;overflow-wrap:anywhere}
+#ghead .hn,#ghead .hs{overflow-wrap:anywhere;white-space:pre-wrap;overflow:visible;text-overflow:clip}
+@container gmain (max-width:600px){
+  .gsplit{flex-direction:column}
+  .gmain.hist #gfiles{flex:0 0 auto;max-height:32%;border-right:0;border-bottom:1px solid var(--line)}
+}
+@container gitp (max-width:680px){
+  .gbody{flex-direction:column}
+  #git .gside{flex:0 0 44%;min-width:0;width:auto}
+  .gbar .sp{display:none}
+}
+
+/* ---------- board: the start screen. Sticky notes, each can tag folders with / ---------- */
+#board{position:fixed;top:44px;bottom:30px;left:0;right:0;z-index:30;display:none;flex-direction:column;background:var(--bg)}
+body[data-board="1"] #board{display:flex}
+body[data-board="1"] #crumbs{visibility:hidden}
+#bbtn{-webkit-app-region:no-drag}
+#bbtn.on{background:var(--a1);color:var(--on);font-weight:700;border-color:transparent}
+.bhead{display:flex;align-items:flex-end;gap:12px;padding:20px 26px 14px;border-bottom:1px solid var(--line)}
+.bq{font-size:24px;font-weight:700;color:var(--hi);line-height:1.2}
+.bsub{color:var(--dim);font-size:12px;margin-top:5px}
+.bhead .sp{flex:1}
+.bbody{flex:1;display:flex;min-height:0}
+#bproj{width:236px;flex:none;overflow:auto;padding:6px 10px 16px 16px;border-right:1px solid var(--line)}
+.bph{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding:12px 8px 6px}
+.bp{display:flex;width:100%;gap:8px;align-items:baseline;text-align:left;border:0;background:none;color:var(--fg);font:inherit;padding:7px 8px;border-radius:8px;cursor:pointer}
+.bp:hover{background:rgba(var(--acc),.18);color:var(--hi)}
+.bp span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bp small{flex:none;color:var(--dim);font-size:10.5px}
+#bwith{margin:0 8px}
+#bwrap{flex:1;overflow:auto;position:relative}
+#bcanvas{position:relative;min-width:100%;min-height:100%;background-image:radial-gradient(rgba(var(--ink),.13) 1px,transparent 1.5px);background-size:26px 26px}
+.bempty{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);color:var(--dim);text-align:center;line-height:2;pointer-events:none;white-space:nowrap}
+.bempty b{display:block;color:var(--mid);font-size:16px}
+.note{position:absolute;width:218px;border-radius:3px;background:var(--nc);color:#26221b;box-shadow:0 1px 1px rgba(0,0,0,.25),0 10px 22px rgba(0,0,0,calc(var(--sh)*.55))}
+.note.drag{box-shadow:0 2px 2px rgba(0,0,0,.25),0 22px 40px rgba(0,0,0,var(--sh));cursor:grabbing}
+.nbar{height:22px;cursor:grab;display:flex;justify-content:flex-end;align-items:center;gap:2px;padding:0 3px;background:rgba(0,0,0,.08);border-radius:3px 3px 0 0}
+.nbar button{border:0;background:none;color:rgba(0,0,0,.5);cursor:pointer;font:inherit;font-size:12px;line-height:16px;padding:0 6px;border-radius:4px;opacity:0}
+.nbar button:hover{background:rgba(0,0,0,.14);color:#000}
+.note:hover .nbar button,.note:focus-within .nbar button{opacity:1}
+.ntext{min-height:78px;padding:8px 11px 12px;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;cursor:text;font-size:13px;line-height:1.55}
+.ntext:empty::before{content:'note to self...  type / to tag a folder';color:rgba(0,0,0,.4)}
+.tag{display:inline-block;background:rgba(0,0,0,.8);color:#fff;border-radius:5px;padding:0 6px;margin:0 1px;font-size:12px;line-height:1.5;cursor:pointer;user-select:none}
+.tag:hover{background:#000}
+.ngo{display:block;width:100%;border:0;border-top:1px dashed rgba(0,0,0,.25);background:rgba(0,0,0,.07);color:#26221b;font:inherit;font-size:11.5px;font-weight:700;text-align:left;padding:7px 11px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:0 0 3px 3px}
+.ngo:hover{background:rgba(0,0,0,.2)}
+#tagpick{position:fixed;z-index:60;display:none;min-width:270px;max-width:440px;background:rgba(var(--float),.96);backdrop-filter:blur(30px);border:1px solid var(--line2);border-radius:11px;box-shadow:0 22px 60px rgba(0,0,0,var(--sh));padding:5px}
+.tp{display:flex;gap:12px;align-items:baseline;padding:6px 11px;border-radius:7px;cursor:pointer;color:var(--fg);white-space:nowrap}
+.tp.act{background:var(--a1);color:var(--on)}
+.tp span{overflow:hidden;text-overflow:ellipsis}
+.tp small{margin-left:auto;opacity:.65;font-size:10.5px}
+#keys .bk{display:none}
+body[data-board="1"] #keys>span:not(.r):not(.bk){display:none}
+body[data-board="1"] #keys>span.bk:not(.r){display:inline}
 </style>
 </head>
 <body>
@@ -451,6 +509,7 @@ body[data-kf=git] .col.act{border-color:var(--line2)}
   <button class="cbtn" id="rootbtn"></button>
   <div id="crumbs"></div>
   <div class="searchwrap"><input id="q" placeholder="find any folder or file" autocomplete="off" spellcheck="false"><div id="results"></div></div>
+  <button class="cbtn" id="bbtn" title="The board: sticky notes and a jump into any project. Ctrl+B.">board</button>
   <span class="seg" id="viewseg" title="Click to show or hide each pane. Any mix of two or three sits side by side. Ctrl+G is git, Ctrl+J is Claude."><button data-v="files">files</button><button data-v="git">git</button><button data-v="claude">claude</button></span>
   <button class="cbtn" id="gset" title="Account, theme, layout and root folder">settings</button>
   <span id="clock"></span>
@@ -506,6 +565,19 @@ body[data-kf=git] .col.act{border-color:var(--line2)}
 </section>
 <aside id="dock"><div class="dockin" id="dockin"></div></aside>
 </div>
+<section id="board">
+  <div class="bhead">
+    <div><div class="bq">What do you want to work on?</div><div class="bsub">Double click anywhere to drop a note. Type / in a note to tag a folder. Click a tag to jump straight into it.</div></div>
+    <span class="sp"></span>
+    <button class="btn" id="bnew">+ note</button>
+    <button class="btn pri" id="bgo">go to workspace</button>
+  </div>
+  <div class="bbody">
+    <div id="bproj"></div>
+    <div id="bwrap"><div id="bcanvas"></div></div>
+  </div>
+</section>
+<div id="tagpick"></div>
 <div id="keys">
   <span><kbd>&uarr;</kbd><kbd>&darr;</kbd>move</span><span><kbd>&rarr;</kbd><kbd>&larr;</kbd>in / out</span>
   <span><kbd>shift</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd>select more</span><span><kbd>space</kbd>add / remove</span>
@@ -513,6 +585,7 @@ body[data-kf=git] .col.act{border-color:var(--line2)}
   <span><kbd>ctrl</kbd><kbd>shift</kbd><kbd>n</kbd>new folder</span><span><kbd>s</kbd>sort</span><span><kbd>p</kbd>print</span><span><kbd>m</kbd>menu</span>
   <span><kbd>ctrl</kbd><kbd>tab</kbd>next pane</span><span><kbd>ctrl</kbd><kbd>\</kbd>files + claude</span><span><kbd>ctrl</kbd><kbd>n</kbd>new chat</span><span><kbd>u</kbd>usb</span><span><kbd>h</kbd>home</span><span><kbd>ctrl</kbd><kbd>f</kbd>find</span><span><kbd>ctrl</kbd><kbd>g</kbd>git</span>
   <span class="gk"><kbd>&uarr;</kbd><kbd>&darr;</kbd>move</span><span class="gk"><kbd>space</kbd>tick / untick</span><span class="gk"><kbd>ctrl</kbd><kbd>enter</kbd>commit</span><span class="gk"><kbd>ctrl</kbd><kbd>g</kbd>hide git</span><span class="gk"><kbd>ctrl</kbd><kbd>tab</kbd>next pane</span><span class="gk"><kbd>right click</kbd>discard, copy path</span>
+  <span class="bk"><kbd>double click</kbd>new note</span><span class="bk"><kbd>n</kbd>new note</span><span class="bk"><kbd>/</kbd>tag a folder</span><span class="bk"><kbd>click a tag</kbd>jump in</span><span class="bk"><kbd>ctrl</kbd><kbd>z</kbd>bring back a removed note</span><span class="bk"><kbd>esc</kbd>go to workspace</span><span class="bk"><kbd>ctrl</kbd><kbd>b</kbd>board</span>
   <span class="r" id="status"></span>
 </div>
 <div id="marq"></div><div id="menu"></div><div id="toast"></div>
@@ -1215,12 +1288,13 @@ function drawResults(note){
     else d.append(el('span', 'ext ' + (KIND[r.name.split('.').pop().toLowerCase()] || ''), (r.name.includes('.') ? r.name.split('.').pop() : 'file').slice(0, 4)));
     d.append(el('span', 'rn', r.name), el('span', 'rw', r.where));
     d.title = r.path;
-    d.onmousedown = e => { e.preventDefault(); pick(r); };
+    d.onmousedown = e => { e.preventDefault(); pickResult(r); };
     box.append(d);
   });
   box.classList.add('on');
 }
-function pick(r){
+function pickResult(r){
+  if (boardOpen()) closeBoard();
   $('results').classList.remove('on'); $('q').value = ''; $('q').blur();
   if (r.dir) go(r.path); else go(r.folder, {select: r.path});
 }
@@ -1240,7 +1314,7 @@ $('q').addEventListener('keydown', ev => {
     ev.preventDefault(); if (!found.length) return;
     act = (act + (ev.key === 'ArrowDown' ? 1 : -1) + found.length) % found.length; drawResults();
     const a = $('results').querySelector('.act'); if (a) a.scrollIntoView({block: 'nearest'});
-  } else if (ev.key === 'Enter' && found[act] && $('results').classList.contains('on')) pick(found[act]);
+  } else if (ev.key === 'Enter' && found[act] && $('results').classList.contains('on')) pickResult(found[act]);
   else if (ev.key === 'Escape'){ $('q').value = ''; $('results').classList.remove('on'); $('q').blur(); }
   ev.stopPropagation();
 });
@@ -1312,6 +1386,7 @@ document.addEventListener('keydown', ev => {
     return;
   }
   const mode = ev.shiftKey ? 'extend' : (ev.ctrlKey ? 'keep' : undefined);
+  if (boardOpen()){ boardKey(ev); return; }                 // the board has the keyboard
   if (appKey(ev)) return;
   if (KF === 'git' && shown('git')){ gitKey(ev); return; }   // the git pane has the keyboard
   if (!shown('files')) return;                              // file keys (delete, cut, paste) must not act on a hidden file list
@@ -1367,7 +1442,7 @@ const EFFORTS = [['', 'default'], ['low', 'low'], ['medium', 'medium'], ['high',
 const WINDOW_NAME = {five_hour: 'session (5 hr)', seven_day: 'week'};
 
 function load(key, dflt){ try { const v = JSON.parse(localStorage.getItem(key) || 'null'); return v == null ? dflt : v; } catch (e) { return dflt; } }
-const S = Object.assign({view: 'split', side: 'right', chatsPos: 'side', mode: 'look', model: '', effort: '', usage: null, chatId: null, theme: '', gitRepo: null, panes: null, w: {}}, load('fm.ui', {}));
+const S = Object.assign({view: 'split', side: 'right', chatsPos: 'side', mode: 'look', model: '', effort: '', usage: null, chatId: null, theme: '', gitRepo: null, panes: null, w: {}, boardStart: true}, load('fm.ui', {}));
 if (!MODE_HINT[S.mode]) S.mode = 'look';
 // Chats are shared: they are saved inside the root folder, so everyone who opens the same
 // root folder (on any PC) sees the same list. Settings below stay on this PC.
@@ -1563,11 +1638,11 @@ function applyPanes(){
   if (sum > room && sum > 0) want = want.map(x => Math.max(MINW, Math.floor(x * room / sum)));
   for (const p of PANES){
     const e = paneEl[p], i = fixed.indexOf(p);
-    e.classList.toggle('first', order[0] === p); e.classList.toggle('grow', p === flexP && p !== 'files');
+    e.classList.toggle('first', order[0] === p); e.classList.toggle('pgrow', p === flexP && p !== 'files');
     e.style.display = shown(p) ? '' : 'none';
     e.style.flex = !shown(p) ? '' : p === flexP ? '1 1 0px' : '0 0 ' + want[i] + 'px';
   }
-  for (const btn of $('viewseg').children) btn.classList.toggle('on', shown(btn.dataset.v));
+  for (const btn of document.querySelectorAll('#viewseg button, #bwith button')) btn.classList.toggle('on', shown(btn.dataset.v));
 }
 function afterPanes(){
   cBar(); saveAll();
@@ -1663,6 +1738,8 @@ async function reveal(p){
 // Keys that work everywhere, even while typing to Claude. Returns true when it used the key.
 function appKey(ev){
   const k = ev.key, low = k.toLowerCase();
+  if (ev.ctrlKey && low === 'b'){ ev.preventDefault(); boardOpen() ? closeBoard() : openBoard(); return true; }
+  if (boardOpen()) return false;
   if (ev.ctrlKey && k === 'Tab'){ ev.preventDefault(); switchPane(); return true; }
   if (ev.ctrlKey && k === '\\'){ ev.preventDefault(); if (shown('files') && shown('claude')) setPanes({...S.panes, [document.activeElement === $('cin') ? 'files' : 'claude']: false}); else setPanes({...S.panes, files: true, claude: true}); return true; }
   if (ev.ctrlKey && low === 'j'){ ev.preventDefault(); if (document.activeElement === $('cin')) $('cin').blur(); else toClaude(); return true; }
@@ -1733,13 +1810,15 @@ function settingsMenu(btn){
     {label: tick(S.chatsPos === 'top') + 'Tabs across the top', run: () => { S.chatsPos = 'top'; cBar(); saveAll(); }});
   items.push('-', {head: 'which side claude sits on'}, {label: tick(S.side === 'right') + 'Claude on the right', run: () => { S.side = 'right'; afterPanes(); }},
     {label: tick(S.side === 'left') + 'Claude on the left', run: () => { S.side = 'left'; afterPanes(); }});
+  items.push('-', {head: 'when loom starts'}, {label: tick(S.boardStart) + 'Open on the board', run: () => { S.boardStart = true; saveAll(); }},
+    {label: tick(!S.boardStart) + 'Open where I left off', run: () => { S.boardStart = false; saveAll(); }});
   items.push('-', {head: 'root folder'}, {head: HOME || 'none chosen'}, {label: 'Choose a different root folder...', run: chooseRoot});
   const mx = Math.max(8, r.right - 300), my = r.bottom + 4;
   items.push('-', {head: 'look'}, {label: 'Theme:  ' + themeName() + '  ▸', run: () => themeMenu(mx, my)});
   menu(mx, my, items);
 }
 
-$('viewseg').onclick = ev => { const v = ev.target.dataset.v; if (v){ togglePane(v); if (v === 'claude' && shown('claude')) $('cin').focus(); } };
+$('viewseg').onclick = ev => { const v = ev.target.dataset.v; if (v && boardOpen()){ closeBoard(); showPane(v); return; } if (v){ togglePane(v); if (v === 'claude' && shown('claude')) $('cin').focus(); } };
 $('csend').onclick = cSend;
 $('cmode').onclick = ev => { const m = ev.target.dataset.m; if (m){ S.mode = m; cBar(); saveAll(); $('cin').focus(); } };
 $('cmodel').onclick = ev => pick(ev.currentTarget, MODELS, 'model');
@@ -1754,6 +1833,278 @@ $('cin').addEventListener('keydown', ev => {
 });
 $('cin').addEventListener('input', () => { const t = $('cin'); t.style.height = 'auto'; t.style.height = Math.min(200, t.scrollHeight + 2) + 'px'; });
 $('clogo').innerHTML = SPARK; $('brandlogo').innerHTML = SPARK;
+
+// ---------- the board ----------
+// The start screen: loose sticky notes, saved inside the root folder next to the chats.
+// A note can tag folders (type /). Clicking a tag opens that folder in the workspace.
+const NOTE_COLORS = ['#f4d976', '#f3aebb', '#a5cdf0', '#afdca6', '#f2b784', '#e7e1d3'];
+const B = {notes: [], folders: null, saveT: 0, pick: null, z: 1, gone: null, color: 0, seq: 0, warned: false};
+function boardOpen(){ return document.body.dataset.board === '1'; }
+const sepOf = () => (HOME.includes('\\') ? '\\' : '/');
+const trimEnd = p => String(p).replace(/[\\/]+$/, '');
+function relOf(p){ const h = trimEnd(HOME); p = String(p); if (p.toLowerCase().startsWith(h.toLowerCase())) p = p.slice(h.length); return p.replace(/\\/g, '/').replace(/^\/+|\/+$/g, ''); }
+function absOf(rel){ return rel ? trimEnd(HOME) + sepOf() + rel.split('/').join(sepOf()) : HOME; }
+function noteTags(n){ return n.parts.filter(x => x.p != null).map(x => x.p); }
+function noteEmpty(n){ return !n.parts.some(x => x.p != null || (x.t || '').trim()); }
+
+async function loadBoard(){
+  B.folders = null;
+  try { const r = await call('boardGet'); B.notes = (r.notes || []).filter(n => n && Array.isArray(n.parts)); } catch (e) { B.notes = []; }
+  B.z = B.notes.reduce((m, n) => Math.max(m, n.z || 0), 1);
+  if (boardOpen()){ drawBoard(); drawRail(); loadFolders().then(drawRail); }
+}
+function saveBoardNow(){
+  clearTimeout(B.saveT); B.saveT = 0;
+  if (!HOME) return;
+  call('boardSave', {notes: B.notes.filter(n => !noteEmpty(n))}).catch(e => { if (!B.warned){ B.warned = true; toast('Could not save the board into the root folder: ' + e.message, true); } });
+}
+function saveBoard(){ clearTimeout(B.saveT); B.saveT = setTimeout(saveBoardNow, 500); }
+function flushBoard(){ if (B.saveT) saveBoardNow(); }
+addEventListener('beforeunload', flushBoard);
+
+// Folders the / picker offers: the top two levels of the root, plus whatever the search index finds deeper down.
+async function loadFolders(){
+  if (B.folders) return B.folders;
+  const out = [], root = HOME;
+  try {
+    const top = await call('ls', {path: root});
+    const tops = top.dirs.filter(d => !d.skip);
+    for (const d of tops) out.push({name: d.name, rel: relOf(d.path), depth: 0});
+    await Promise.all(tops.map(async d => {
+      try { const l = await call('ls', {path: d.path}); for (const k of l.dirs) if (!k.skip) out.push({name: k.name, rel: relOf(k.path), depth: 1}); } catch (e) { /* unreadable: leave it out */ }
+    }));
+  } catch (e) { /* no folders to offer */ }
+  if (root === HOME) B.folders = out;
+  return out;
+}
+function drawRail(){
+  const box = $('bproj'); box.textContent = '';
+  box.append(el('div', 'bph', 'open with'));
+  const seg = el('span', 'seg'); seg.id = 'bwith'; seg.title = 'Which panes are up when you jump in.';
+  for (const p of PANES){ const b = el('button', shown(p) ? 'on' : '', p); b.dataset.v = p; seg.append(b); }
+  seg.onclick = ev => { const v = ev.target.dataset.v; if (v) togglePane(v); };
+  box.append(seg);
+  box.append(el('div', 'bph', 'jump straight in'));
+  const tops = (B.folders || []).filter(f => f.depth === 0);
+  if (!tops.length) box.append(el('div', 'bsub', B.folders ? 'No folders in this root yet.' : 'Looking...'));
+  for (const f of tops){
+    const b = el('button', 'bp'); b.append(el('span', '', f.name));
+    const k = B.notes.filter(n => noteTags(n).some(t => t === f.rel || t.startsWith(f.rel + '/'))).length;
+    if (k) b.append(el('small', '', plural(k, 'note')));
+    b.title = absOf(f.rel); b.onclick = () => openTag(f.rel);
+    box.append(b);
+  }
+  const all = el('button', 'bp'); all.append(el('span', '', 'everything  (' + (trimEnd(HOME).split(/[\\/]/).pop() || HOME) + ')')); all.onclick = () => openTag('');
+  box.append(el('div', 'bph', 'or'), all);
+}
+function tagEl(rel){ const t = el('span', 'tag', '/' + rel); t.contentEditable = 'false'; t.dataset.p = rel; t.title = 'Open ' + absOf(rel); return t; }
+function readParts(root){
+  const out = [];
+  const push = t => { if (!t) return; const l = out[out.length - 1]; if (l && l.t != null) l.t += t; else out.push({t}); };
+  (function walk(n){ for (const c of n.childNodes){
+    if (c.nodeType === 3) push(c.nodeValue);
+    else if (c.nodeType !== 1) continue;
+    else if (c.classList.contains('tag')) out.push({p: c.dataset.p});
+    else if (c.tagName === 'BR') push('\n');
+    else { if (out.length && c.tagName === 'DIV') push('\n'); walk(c); }
+  } })(root);
+  return out;
+}
+function sizeCanvas(){
+  let w = 0, h = 0;
+  for (const n of B.notes){ w = Math.max(w, n.x + 300); h = Math.max(h, n.y + 320); }
+  const c = $('bcanvas'); c.style.width = w + 'px'; c.style.height = h + 'px';
+}
+function noteGo(e, n){
+  const old = e.querySelector('.ngo'); if (old) old.remove();
+  const tags = noteTags(n); if (!tags.length) return;
+  const b = el('button', 'ngo', 'open /' + tags[0] + '  →'); b.title = 'Open ' + absOf(tags[0]) + ' in the workspace';
+  b.onclick = () => openTag(tags[0]); e.append(b);
+}
+function noteEl(n){
+  const e = el('div', 'note'); e.dataset.id = n.id;
+  const place = () => { e.style.left = n.x + 'px'; e.style.top = n.y + 'px'; e.style.zIndex = n.z || 1; e.style.setProperty('--nc', NOTE_COLORS[n.c % NOTE_COLORS.length] || NOTE_COLORS[0]); e.style.transform = 'rotate(' + (n.r || 0) + 'deg)'; };
+  place();
+  const bar = el('div', 'nbar');
+  const col = el('button', '', '●'); col.title = 'Change colour';
+  col.onclick = () => { n.c = ((n.c || 0) + 1) % NOTE_COLORS.length; B.color = n.c; place(); saveBoard(); };
+  const del = el('button', '', '✕'); del.title = 'Remove this note';
+  del.onclick = () => removeNote(n, true);
+  bar.append(col, del);
+  const tx = el('div', 'ntext'); tx.contentEditable = 'plaintext-only'; tx.spellcheck = true;
+  for (const part of n.parts) tx.append(part.p != null ? tagEl(part.p) : document.createTextNode(part.t));
+  const changed = () => { n.parts = readParts(tx); if (noteEmpty(n)) tx.textContent = ''; noteGo(e, n); saveBoard(); };
+  tx.addEventListener('input', () => { changed(); tagPick(); });
+  tx.addEventListener('keydown', ev => {
+    if (B.pick){
+      if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp'){ ev.preventDefault(); B.pick.at = (B.pick.at + (ev.key === 'ArrowDown' ? 1 : -1) + B.pick.list.length) % B.pick.list.length; drawPick(); }
+      else if (ev.key === 'Enter' || ev.key === 'Tab'){ ev.preventDefault(); chooseTag(B.pick.list[B.pick.at]); }
+      else if (ev.key === 'Escape'){ ev.preventDefault(); closePick(); }
+    }
+    else if (ev.key === 'Escape'){ ev.preventDefault(); tx.blur(); }
+    else if (ev.ctrlKey && ev.key.toLowerCase() === 'b'){ ev.preventDefault(); closeBoard(); }
+    ev.stopPropagation();
+  });
+  tx.addEventListener('keyup', ev => { if (ev.key.startsWith('Arrow') && !B.pick) tagPick(); ev.stopPropagation(); });
+  tx.addEventListener('focus', () => { n.z = ++B.z; e.style.zIndex = n.z; });
+  tx.addEventListener('blur', () => { setTimeout(closePick, 120); if (noteEmpty(n)) removeNote(n, false); else drawRail(); });
+  tx._changed = changed;
+  bar.addEventListener('mousedown', ev => {
+    if (ev.target.closest('button') || ev.button !== 0) return;
+    ev.preventDefault();
+    const sx = ev.clientX - n.x, sy = ev.clientY - n.y; n.z = ++B.z; e.style.zIndex = n.z; e.classList.add('drag');
+    const move = m => { n.x = Math.max(0, Math.round(m.clientX - sx)); n.y = Math.max(0, Math.round(m.clientY - sy)); e.style.left = n.x + 'px'; e.style.top = n.y + 'px'; };
+    const upp = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', upp); e.classList.remove('drag'); sizeCanvas(); saveBoard(); };
+    addEventListener('mousemove', move); addEventListener('mouseup', upp);
+  });
+  e.append(bar, tx); noteGo(e, n);
+  return e;
+}
+function drawBoard(){
+  const c = $('bcanvas'); c.textContent = '';
+  if (!B.notes.length){
+    const h = el('div', 'bempty'); h.append(el('b', '', 'Nothing on the board yet.'), 'Double click anywhere to drop a note to yourself.', document.createElement('br'), 'Type / in a note to tag a project, then click the tag to jump into it.');
+    c.append(h);
+  }
+  for (const n of B.notes) c.append(noteEl(n));
+  sizeCanvas();
+}
+function addNote(x, y){
+  const hint = $('bcanvas').querySelector('.bempty'); if (hint) hint.remove();
+  const n = {id: Math.random().toString(36).slice(2, 12), x: Math.max(0, Math.round(x)), y: Math.max(0, Math.round(y)), c: B.color, r: Math.round((Math.random() * 4 - 2) * 10) / 10, z: ++B.z, parts: [], at: Date.now()};
+  B.notes.push(n);
+  const e = noteEl(n); $('bcanvas').append(e); sizeCanvas();
+  e.querySelector('.ntext').focus();
+  return n;
+}
+function addNoteInView(){
+  const w = $('bwrap'), k = B.notes.length % 6;
+  addNote(w.scrollLeft + 60 + k * 34, w.scrollTop + 40 + k * 30);
+}
+function removeNote(n, told){
+  const i = B.notes.indexOf(n); if (i < 0) return;
+  B.notes.splice(i, 1);
+  const e = $('bcanvas').querySelector('.note[data-id="' + n.id + '"]'); if (e) e.remove();
+  if (told && !noteEmpty(n)){ B.gone = n; toast('Note removed. Ctrl+Z brings it back.'); }
+  if (!B.notes.length) drawBoard();
+  sizeCanvas(); drawRail(); saveBoard();
+}
+$('bcanvas').addEventListener('dblclick', ev => {
+  if (ev.target.closest('.note')) return;
+  const r = $('bcanvas').getBoundingClientRect();
+  addNote(ev.clientX - r.left - 30, ev.clientY - r.top - 14);
+});
+$('bcanvas').addEventListener('click', ev => { const t = ev.target.closest('.tag'); if (t){ ev.preventDefault(); openTag(t.dataset.p); } });
+$('bnew').onclick = addNoteInView;
+$('bgo').onclick = () => closeBoard();
+$('bbtn').onclick = () => (boardOpen() ? closeBoard() : openBoard());
+
+// ----- the / picker -----
+function closePick(){ B.pick = null; $('tagpick').style.display = 'none'; }
+function drawPick(){
+  const box = $('tagpick'), pk = B.pick; if (!pk) return;
+  box.textContent = '';
+  pk.list.forEach((f, i) => {
+    const d = el('div', 'tp' + (i === pk.at ? ' act' : '')); d.append(el('span', '', '/' + f.rel));
+    if (f.depth === 0) d.append(el('small', '', 'project'));
+    d.onmousedown = ev => { ev.preventDefault(); chooseTag(f); };
+    box.append(d);
+  });
+  box.style.display = 'block';
+  box.style.left = Math.max(8, Math.min(pk.x, innerWidth - box.offsetWidth - 8)) + 'px';
+  box.style.top = (pk.y + box.offsetHeight + 8 > innerHeight ? Math.max(8, pk.y - box.offsetHeight - 28) : pk.y) + 'px';
+}
+function matchFolders(q, extra){
+  const all = (B.folders || []).concat(extra || []), seen = new Set();
+  const hits = all.filter(f => { const k = f.rel.toLowerCase(); if (seen.has(k) || !k) return false; seen.add(k); return q ? k.includes(q) : f.depth === 0; });
+  const rank = f => (f.name.toLowerCase().startsWith(q) ? 0 : f.rel.toLowerCase().startsWith(q) ? 1 : f.name.toLowerCase().includes(q) ? 2 : 3);
+  hits.sort((a, b) => rank(a) - rank(b) || a.depth - b.depth || a.rel.length - b.rel.length || a.rel.localeCompare(b.rel));
+  return hits.slice(0, 9);
+}
+// Looks left of the caret for a / that starts a word. The nearest one that matches a folder wins.
+function tagPick(){
+  const s = getSelection(), n = s.anchorNode;
+  if (!s.rangeCount || !s.isCollapsed || !n || n.nodeType !== 3 || !n.parentNode.closest('.ntext')) return closePick();
+  const before = n.nodeValue.slice(0, s.anchorOffset);
+  const starts = [];
+  for (let i = before.length - 1; i >= 0 && before.length - i <= 80; i--){ if (before[i] === '\n') break; if (before[i] === '/' && (i === 0 || /\s/.test(before[i - 1]))) starts.push(i); }
+  for (const i of starts){
+    const q = before.slice(i + 1).toLowerCase().replace(/\\/g, '/');
+    const list = matchFolders(q);
+    if (!list.length && q.length < 2) continue;
+    const rg = document.createRange(); rg.setStart(n, i); rg.setEnd(n, i + 1);
+    const rc = rg.getBoundingClientRect();
+    const keepAt = B.pick && B.pick.q === q ? B.pick.at : 0;
+    if (list.length){ B.pick = {node: n, start: i, q, list, at: Math.min(keepAt, list.length - 1), x: rc.left, y: rc.bottom + 4}; drawPick(); } else closePick();
+    if (q.length >= 2){                                  // deeper folders, from the search index
+      const seq = ++B.seq;
+      call('search', {q: q.replace(/\//g, ' ')}).then(r => {
+        if (seq !== B.seq || !document.activeElement || !document.activeElement.classList.contains('ntext')) return;
+        const extra = (r.results || []).filter(x => x.dir).map(x => ({name: x.name, rel: relOf(x.path), depth: 2}));
+        const more = matchFolders(q, extra); if (!more.length) return;
+        B.pick = {node: n, start: i, q, list: more, at: 0, x: rc.left, y: rc.bottom + 4}; drawPick();
+      }).catch(() => {});
+    }
+    return;
+  }
+  closePick();
+}
+function chooseTag(f){
+  const pk = B.pick; if (!pk || !f) return closePick();
+  const s = getSelection(), node = pk.node;
+  const end = s.anchorNode === node ? s.anchorOffset : node.nodeValue.length;
+  const rg = document.createRange(); rg.setStart(node, Math.min(pk.start, node.nodeValue.length)); rg.setEnd(node, Math.max(pk.start, end));
+  const tx = node.parentNode.closest('.ntext');
+  rg.deleteContents();
+  const chip = tagEl(f.rel), sp = document.createTextNode(' ');
+  rg.insertNode(sp); rg.insertNode(chip);
+  s.collapse(sp, 1);
+  closePick();
+  if (tx && tx._changed) tx._changed();
+}
+
+// ----- in and out -----
+async function openTag(rel){
+  flushBoard();
+  const p = absOf(rel);
+  if ((await go(p)) === false) return;                  // the folder is gone: the message is already up
+  closeBoard();
+  if (shown('git')){
+    if (!G.repos) await gitEnter();
+    const a = p.toLowerCase() + sepOf();
+    const inside = (G.repos || []).filter(r => a.startsWith(r.path.toLowerCase() + sepOf())).sort((x, y) => y.path.length - x.path.length)[0]
+      || (G.repos || []).filter(r => (r.path.toLowerCase() + sepOf()).startsWith(a)).sort((x, y) => x.path.length - y.path.length)[0];
+    if (inside) gitPickRepo(inside.path);
+  }
+  if (shown('claude')) $('cin').focus();
+}
+function openBoard(){
+  if (!HOME) return toast('Choose a root folder first.');
+  closeMenu(); document.body.dataset.board = '1'; $('bbtn').classList.add('on');
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  drawBoard(); drawRail();
+  B.folders = null; loadFolders().then(drawRail);
+  if (!B.saveT) call('boardGet').then(r => {             // pick up notes changed from another PC
+    if (B.saveT || !boardOpen() || document.activeElement.classList.contains('ntext')) return;
+    const next = (r.notes || []).filter(n => n && Array.isArray(n.parts));
+    if (JSON.stringify(next) !== JSON.stringify(B.notes)){ B.notes = next; B.z = B.notes.reduce((m, n) => Math.max(m, n.z || 0), 1); drawBoard(); drawRail(); }
+  }).catch(() => {});
+}
+function closeBoard(){
+  if (!boardOpen()) return;
+  if (document.activeElement && document.activeElement.classList.contains('ntext')) document.activeElement.blur();
+  closePick(); flushBoard();
+  delete document.body.dataset.board; $('bbtn').classList.remove('on');
+  requestAnimationFrame(() => { applyPanes(); alignCols(); drawWires(); });
+}
+function boardKey(ev){
+  const k = ev.key, low = k.toLowerCase();
+  if (document.activeElement === $('q')) return;
+  if (k === 'Escape' || k === 'Enter' || (ev.ctrlKey && low === 'b')){ ev.preventDefault(); closeBoard(); }
+  else if (ev.ctrlKey && low === 'z'){ ev.preventDefault(); if (B.gone){ B.notes.push(B.gone); B.gone = null; drawBoard(); drawRail(); saveBoard(); } }
+  else if (ev.ctrlKey && low === 'f'){ ev.preventDefault(); $('q').focus(); $('q').select(); }
+  else if (low === 'n' && !ev.ctrlKey && !ev.altKey){ ev.preventDefault(); addNoteInView(); }
+}
 
 // ---------- root folder ----------
 let recents = [];
@@ -1777,6 +2128,7 @@ async function applyRoot(r){
     gitReset();
     chats = []; await syncChats();
     ensureChat(); drawChats(); cDraw(); cBar();
+    await loadBoard();
   }
 }
 async function chooseRoot(){
@@ -1793,6 +2145,7 @@ function rootMenu(btn){
   menu(r.left, r.bottom + 4, items);
 }
 function needRoot(){
+  delete document.body.dataset.board; $('bbtn').classList.remove('on');
   const cols = $('cols'); cols.textContent = ''; $('wires').innerHTML = ''; $('crumbs').textContent = '';
   const c = el('div', 'col act'); c.style.width = '460px';
   const h = el('div', 'head'); h.append(el('div', 'hl', 'welcome'), el('div', 'hn', 'Pick your root folder'), el('div', 'hs', 'Everything you browse, and everything Claude works on, lives under it.'));
@@ -2084,10 +2437,12 @@ addEventListener('resize', () => { applyPanes(); alignCols(); drawWires(); });
 addEventListener('focus', () => { if (cur) go(cur.path, {noHistory: true}); pollDrives(); if (shown('git')) gitRefresh(); });
 (async function start(){
   applyTheme();
+  if (S.boardStart) document.body.dataset.board = '1';      // no flash of the workspace before the board
   tick(); setInterval(tick, 15000);
   cBar(); drawUsage(); cStatus();
   await pollDrives(true);
   await applyRoot(await fm.root.get());
+  if (HOME && S.boardStart) openBoard(); else delete document.body.dataset.board;
   cBar(); drawChats(); cDraw();
   setInterval(pollDrives, 2500);
   setInterval(drawChats, 60000);

@@ -459,7 +459,37 @@ function create({ workspace, fakeUsb }) {
     return { sent, failed };
   }
 
-  return { root: () => WORKSPACE, setRoot, preview, chatsList, chatSave, chatDelete, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
+  // ---------- the board ----------
+  // Sticky notes for the start screen, kept with the chats (ROOT\.folder-map\board.json).
+  // Folder tags are saved relative to the root, so the board still works if the root moves.
+  const boardFile = () => path.join(WORKSPACE, STORE, 'board.json');
+  async function boardGet() {
+    if (!WORKSPACE) return { notes: [] };
+    try { const b = JSON.parse(await fsp.readFile(boardFile(), 'utf8')); return { notes: Array.isArray(b.notes) ? b.notes : [] }; }
+    catch (e) { return { notes: [] }; }
+  }
+  const num = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || 0));
+  async function boardSave({ notes }) {
+    if (!WORKSPACE) throw new Problem('Choose a root folder first.');
+    const clean = (Array.isArray(notes) ? notes : []).slice(0, 400).map(n => ({
+      id: goodId(n && n.id) ? n.id : Math.random().toString(36).slice(2, 12),
+      x: num(n.x, 0, 20000), y: num(n.y, 0, 20000), c: num(n.c, 0, 20), r: num(n.r, -6, 6), z: num(n.z, 0, 1e9), at: Number(n.at) || Date.now(),
+      parts: (Array.isArray(n.parts) ? n.parts : []).slice(0, 80).map(part => {
+        if (part && typeof part.p === 'string') {
+          const rel = part.p.replace(/\\/g, '/').split('/').filter(x => x && x !== '.' && x !== '..').join('/').slice(0, 400);
+          return { p: rel };
+        }
+        return { t: String((part && part.t) || '').slice(0, 4000) };
+      }),
+    }));
+    await fsp.mkdir(path.join(WORKSPACE, STORE), { recursive: true });
+    const file = boardFile(), tmp = file + '.' + process.pid + '.tmp';
+    await fsp.writeFile(tmp, JSON.stringify({ notes: clean }, null, 1));
+    await fsp.rename(tmp, file);
+    return { ok: true };
+  }
+
+  return { root: () => WORKSPACE, setRoot, preview, chatsList, chatSave, chatDelete, boardGet, boardSave, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
     startIndexing, TRASH, home: () => ({ home: WORKSPACE }) };
 }
 
