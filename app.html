@@ -96,9 +96,9 @@ svg.i{width:14px;height:14px;flex:none;fill:currentColor}
 #wires circle{fill:var(--a1)}
 #wires circle.g{fill:var(--a2)}
 .col{flex:none;height:100%;display:flex;flex-direction:column;border-radius:12px;background:var(--tile);border:1px solid var(--line);overflow:hidden;transition:opacity .14s ease-out,transform .14s ease-out,border-color .15s}
-.col.anc{width:206px;opacity:.5}
+.col.anc{width:calc(206px*var(--k,1));opacity:.5}
 .col.anc:hover{opacity:1;border-color:var(--line2)}
-.col.act{width:460px;border:2px solid var(--a1);background:var(--solid)}
+.col.act{width:calc(460px*var(--k,1));border:2px solid var(--a1);background:var(--solid)}
 .col.peek{width:250px;border-style:dashed;border-color:var(--line2);background:var(--peek)}
 .col.in{opacity:.4;transform:translateX(5px)}
 .head{padding:11px 13px 9px;border-bottom:1px solid var(--line);flex:none;min-width:0}
@@ -259,16 +259,16 @@ body.dragging .droptip{display:block}
 /* ---- layout: files | claude | usb, switchable ---- */
 #top,#keys{grid-column:1}
 #main{grid-row:2;grid-column:1;display:flex;min-height:0;min-width:0}
-#stage{flex:1 1 0;min-width:240px;order:2}
+#stage{flex:1 1 0;min-width:0;order:2}
 #dock{flex:0 0 268px;order:6}
 #git{order:4}
-#claude{order:5;flex:0 0 42%;width:auto;min-width:260px;max-width:none;padding:12px 12px 12px 0;min-height:0;position:relative}
+#claude{order:5;flex:0 0 42%;width:auto;min-width:0;max-width:none;padding:12px 12px 12px 0;min-height:0;position:relative}
 body[data-side=left] #claude{order:1}
 body[data-files="0"] #stage,body[data-files="0"] #dock{display:none}
 body[data-claude="0"] #claude{display:none}
-body[data-git="1"] #dock:not(.has){display:none}
+/* the USB dock only takes room while a drive is plugged in */
+#dock:not(.has){display:none}
 #main>.first{padding-left:12px}
-#main>.grow{flex:1 1 0 !important}
 body[data-solo=claude] #cmsgs,body[data-solo=claude] #cctx,body[data-solo=claude] .cinput{padding-left:max(14px,calc(50% - 430px));padding-right:max(14px,calc(50% - 430px))}
 /* where the file columns run under the next pane, fade them out so the edge is easy to see */
 body:not([data-solo=files]) #stage::after{content:"";position:absolute;top:0;bottom:0;right:0;width:22px;background:linear-gradient(90deg,transparent,var(--bg));pointer-events:none;z-index:6}
@@ -278,13 +278,16 @@ body:not([data-solo=files]) #stage::after{content:"";position:absolute;top:0;bot
 .grip:hover::before,body.sizing .grip.live::before{background:var(--a1);width:5px}
 #main>.first>.grip{left:auto;right:1px}
 #main>.grow>.grip,body:not([data-solo=""]) .grip{display:none}
+.cin{min-width:0}
+.gbar,.gbody{min-width:0;overflow:hidden}
+.gbar{flex:none}
 body.sizing{cursor:col-resize}
 body.sizing *{user-select:none !important}
 body.sizing iframe,body.sizing object{pointer-events:none}
 
-body:not([data-solo=files]) .col.act{width:400px}
-body:not([data-solo=files]) .col.peek{width:290px}
-body:not([data-solo=files]) .col.anc{width:176px}
+body:not([data-solo=files]) .col.act{width:calc(400px*var(--k,1))}
+body:not([data-solo=files]) .col.peek{width:calc(290px*var(--k,1))}
+body:not([data-solo=files]) .col.anc{width:calc(176px*var(--k,1))}
 body:not([data-solo=files]) #cols{gap:22px}
 
 /* ---- where Claude just saved: the folders on the way there, the file, and the wire pulse ---- */
@@ -358,7 +361,7 @@ body:not([data-solo=files]) #cols{gap:22px}
 #csend{padding:11px 14px}
 
 /* file preview in the right hand column */
-.col.peek{width:330px}
+.col.peek{width:calc(330px*var(--k,1))}
 .pv{flex:1;overflow:auto;min-height:0;padding:8px}
 .pv pre{margin:0;font:inherit;font-size:11.5px;line-height:1.5;color:var(--mid);white-space:pre;tab-size:4;user-select:text}
 .pv img{display:block;max-width:100%;margin:10px auto;border-radius:6px;background:#f4efe6}
@@ -371,7 +374,7 @@ body:not([data-solo=files]) #cols{gap:22px}
 .cm pre,.cm code,.pv pre{font-family:var(--fixed)}
 
 /* ---- GIT tab: repositories under the root folder, laid out like GitHub Desktop ---- */
-#git{display:none;flex:0 0 50%;min-width:260px;min-height:0;padding:12px 12px 12px 0;flex-direction:column;gap:10px;position:relative}
+#git{display:none;flex:0 0 50%;min-width:0;min-height:0;padding:12px 12px 12px 0;flex-direction:column;gap:10px;position:relative}
 body[data-git="1"] #git{display:flex}
 body[data-files="0"] .searchwrap,body[data-files="0"] #crumbs{visibility:hidden}
 #keys .gk{display:none}
@@ -813,6 +816,11 @@ function render(moved){
 // Keep the folder you are in fully on screen. Show the parents too when there is room.
 function alignCols(){
   const cols = $('cols'), act = cols.querySelector('.col.act'); if (!act) return;
+  // Squeeze every column in step when the files pane is narrow, down to 45% of full size, before any is cut off.
+  cols.style.setProperty('--k', 1);
+  const all = [...cols.children], gap = parseFloat(getComputedStyle(cols).columnGap) || 0;
+  const natural = all.reduce((w, c) => w + c.offsetWidth, 0), room = cols.clientWidth - 26 - gap * (all.length - 1);
+  if (natural > room && natural > 0) cols.style.setProperty('--k', Math.max(.45, room / natural).toFixed(3));
   const fits = cols.scrollWidth - act.offsetLeft + 12 <= cols.clientWidth;
   cols.style.scrollBehavior = 'auto';
   cols.scrollLeft = fits ? cols.scrollWidth : act.offsetLeft - 12;
@@ -875,7 +883,7 @@ function drawDock(){
   d.append(el('div', 'dockhelp', 'Drop here to copy. Delete on a USB drive is permanent. Delete in the workspace moves things to .folder-map-trash so they can be put back.'));
 }
 async function pollDrives(force){
-  try { drives = (await call('drives', {force: !!force})).drives; drawDock(); } catch (e) { /* try again next time */ }
+  try { const had = drives.length; drives = (await call('drives', {force: !!force})).drives; drawDock(); if (!had !== !drives.length){ applyPanes(); alignCols(); drawWires(); } } catch (e) { /* try again next time */ }
 }
 $('dock').addEventListener('click', ev => { const t = ev.target.closest('[data-drop]'); if (t) go(t.dataset.drop); });
 
@@ -1533,6 +1541,8 @@ if (!S.w || typeof S.w !== 'object') S.w = {};
 function shown(p){ return !!S.panes[p]; }
 if (!PANES.some(shown)) S.panes.files = true;
 let KF = 'files';                          // which pane the arrow keys and delete belong to: files or git
+const MINW = 90;                           // a pane can be squished this narrow; dragged past it, the pane closes
+function stretchPane(){ return shown('files') ? 'files' : shown('git') ? 'git' : 'claude'; }
 function applyPanes(){
   const b = document.body, paneEl = {files: $('stage'), git: $('git'), claude: $('claude')};
   for (const p of PANES) b.dataset[p] = shown(p) ? '1' : '0';
@@ -1541,17 +1551,22 @@ function applyPanes(){
   if (!shown(KF)) KF = shown('files') ? 'files' : 'git';
   b.dataset.kf = shown(KF) ? KF : '';
   $('dock').classList.toggle('has', drives.length > 0);
-  // one pane stretches (files when it is up, otherwise git, otherwise Claude); the others keep the width they were dragged to
-  const flexP = shown('files') ? 'files' : shown('git') ? 'git' : 'claude';
-  for (const p of PANES){ paneEl[p].classList.toggle('first', order[0] === p); paneEl[p].classList.toggle('grow', p === flexP && p !== 'files'); paneEl[p].style.flexBasis = ''; }
+  // One pane stretches (files when it is up, otherwise git, otherwise Claude). The others keep the
+  // width they were dragged to. Everything is set here, on the elements, so nothing else can override it.
+  const flexP = stretchPane();
   const fixed = order.filter(p => p !== flexP);
   const total = $('main').clientWidth - (shown('files') ? $('dock').offsetWidth : 0);
   const share = {claude: order.length === 3 ? .30 : .42, git: order.length === 3 ? .36 : .50};
   const combo = order.join('+');                                  // each mix of panes remembers its own widths
-  let want = fixed.map(p => Math.max(300, S.w[combo + ':' + p] || Math.round(total * share[p])));
-  const room = total - 300, sum = want.reduce((x, y) => x + y, 0);
-  if (sum > room && sum > 0) want = want.map(x => Math.max(260, Math.floor(x * room / sum)));
-  fixed.forEach((p, i) => { paneEl[p].style.flexBasis = want[i] + 'px'; });
+  let want = fixed.map(p => Math.max(MINW, S.w[combo + ':' + p] || Math.round(total * share[p])));
+  const room = total - MINW, sum = want.reduce((x, y) => x + y, 0);
+  if (sum > room && sum > 0) want = want.map(x => Math.max(MINW, Math.floor(x * room / sum)));
+  for (const p of PANES){
+    const e = paneEl[p], i = fixed.indexOf(p);
+    e.classList.toggle('first', order[0] === p); e.classList.toggle('grow', p === flexP && p !== 'files');
+    e.style.display = shown(p) ? '' : 'none';
+    e.style.flex = !shown(p) ? '' : p === flexP ? '1 1 0px' : '0 0 ' + want[i] + 'px';
+  }
   for (const btn of $('viewseg').children) btn.classList.toggle('on', shown(btn.dataset.v));
 }
 function afterPanes(){
@@ -1595,11 +1610,26 @@ for (const g of document.querySelectorAll('.grip')){
   g.addEventListener('mousedown', ev => {
     if (ev.button !== 0) return; ev.preventDefault(); ev.stopPropagation();
     const pane = $(p), start = pane.getBoundingClientRect().width, x0 = ev.clientX, onRight = pane.classList.contains('first');
+    const key = document.body.dataset.combo + ':' + p, other = stretchPane();
+    const otherEl = {files: $('stage'), git: $('git'), claude: $('claude')}[other];
+    const limit = start + otherEl.getBoundingClientRect().width;      // the two panes share this much room
+    let raw = start;
     document.body.classList.add('sizing'); g.classList.add('live');
-    const key = document.body.dataset.combo + ':' + p;
-    const move = e => { S.w[key] = Math.max(300, Math.min(innerWidth - 320, Math.round(start + (onRight ? e.clientX - x0 : x0 - e.clientX)))); applyPanes(); alignCols(); drawWires(); };
-    const done = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', done); document.body.classList.remove('sizing'); g.classList.remove('live'); saveAll(); };
-    addEventListener('mousemove', move); addEventListener('mouseup', done);
+    const done = () => {
+      removeEventListener('mousemove', move); removeEventListener('mouseup', done); removeEventListener('blur', done);
+      document.body.classList.remove('sizing'); g.classList.remove('live');
+      // dragged all the way to one edge: that pane closes. Its switch at the top brings it back.
+      const shut = raw < MINW ? p : raw > limit - MINW ? other : null;
+      if (shut && PANES.filter(shown).length > 1){ delete S.w[key]; toast(shut[0].toUpperCase() + shut.slice(1) + ' closed. Click ' + shut.toUpperCase() + ' at the top to bring it back.'); setPanes({...S.panes, [shut]: false}); }
+      saveAll();
+    };
+    const move = e => {
+      if (!(e.buttons & 1)) return done();                             // the button was let go somewhere the page could not see
+      raw = start + (onRight ? e.clientX - x0 : x0 - e.clientX);
+      S.w[key] = Math.max(MINW, Math.min(limit - MINW, Math.round(raw)));
+      applyPanes(); alignCols(); drawWires();
+    };
+    addEventListener('mousemove', move); addEventListener('mouseup', done); addEventListener('blur', done);
   });
   g.addEventListener('dblclick', () => { delete S.w[document.body.dataset.combo + ':' + p]; applyPanes(); alignCols(); drawWires(); saveAll(); });
 }

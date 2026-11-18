@@ -23,30 +23,57 @@ const PANEL_NOTE =
   'Each message from the user starts with a [Loom] block saying which folder they have open and which files they have selected. ' +
   'When they say "this", "these", "here" or "this folder", they mean those. Use full paths from that block when you read or change files.';
 
-function newestDesktopBuild() {
-  const base = path.join(process.env.APPDATA || '', 'Claude', 'claude-code');
-  let best = null;
+// The Claude desktop app keeps its own copy of Claude Code. Where that lives depends on how the
+// desktop app was installed (normal installer, Microsoft Store package, or a work build).
+function desktopBases() {
+  const roaming = process.env.APPDATA || '', local = process.env.LOCALAPPDATA || '';
+  const bases = [];
+  try { for (const d of fs.readdirSync(roaming)) if (/^claude/i.test(d)) bases.push(path.join(roaming, d, 'claude-code')); } catch (e) { /* none */ }
   try {
-    for (const ver of fs.readdirSync(base)) {
-      for (const build of fs.readdirSync(path.join(base, ver))) {
-        const exe = path.join(base, ver, build, 'claude.exe');
-        try {
-          const st = fs.statSync(exe);
-          const key = ver.split('.').map(n => String(n).padStart(6, '0')).join('.');
-          if (!best || key > best.key || (key === best.key && st.mtimeMs > best.mtime)) best = { exe, key, mtime: st.mtimeMs };
-        } catch (e) { /* not a build folder */ }
-      }
+    for (const d of fs.readdirSync(path.join(local, 'Packages'))) {
+      if (!/claude|anthropic/i.test(d)) continue;
+      const r = path.join(local, 'Packages', d, 'LocalCache', 'Roaming');
+      try { for (const x of fs.readdirSync(r)) if (/^claude/i.test(x)) bases.push(path.join(r, x, 'claude-code')); } catch (e) { /* not there */ }
     }
-  } catch (e) { /* desktop app not installed */ }
+  } catch (e) { /* no Store apps */ }
+  return bases;
+}
+function newestDesktopBuild() {
+  let best = null;
+  for (const base of desktopBases()) {
+    try {
+      for (const ver of fs.readdirSync(base)) {
+        const key = ver.split('.').map(n => String(n).padStart(6, '0')).join('.');
+        const tries = [path.join(base, ver, 'claude.exe')];
+        try { for (const build of fs.readdirSync(path.join(base, ver))) tries.push(path.join(base, ver, build, 'claude.exe')); } catch (e) { /* a file, not a folder */ }
+        for (const exe of tries) {
+          try {
+            const st = fs.statSync(exe);
+            if (st.isFile() && (!best || key > best.key || (key === best.key && st.mtimeMs > best.mtime))) best = { exe, key, mtime: st.mtimeMs };
+          } catch (e) { /* not a build folder */ }
+        }
+      }
+    } catch (e) { /* this copy of the desktop app is not installed */ }
+  }
   return best && best.exe;
 }
+// Anything named claude on the PATH: covers winget and other installs that put it somewhere of their own.
+function onPath() {
+  for (const dir of String(process.env.PATH || '').split(path.delimiter)) {
+    if (!dir) continue;
+    for (const n of ['claude.exe', 'claude.cmd']) { const t = path.join(dir.replace(/^"|"$/g, ''), n); try { if (fs.statSync(t).isFile()) return t; } catch (e) { /* next */ } }
+  }
+  return null;
+}
 
-// Where is Claude Code on this PC? An explicit path wins, then a normal install, then the desktop app's copy.
+// Where is Claude Code on this PC? An explicit path wins, then a normal install, then the PATH, then the desktop app's copy.
 function findClaude(explicit) {
-  const home = process.env.USERPROFILE || '';
+  const home = process.env.USERPROFILE || '', local = process.env.LOCALAPPDATA || '';
   const tries = [explicit, process.env.FOLDERMAP_CLAUDE,
     path.join(home, '.local', 'bin', 'claude.exe'),
     path.join(process.env.APPDATA || '', 'npm', 'claude.cmd'),
+    path.join(local, 'Microsoft', 'WinGet', 'Links', 'claude.exe'),
+    onPath(),
     newestDesktopBuild()];
   for (const t of tries) { try { if (t && fs.statSync(t).isFile()) return t; } catch (e) { /* next */ } }
   return null;
