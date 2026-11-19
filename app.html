@@ -278,6 +278,7 @@ body.dragging .droptip{display:block}
 #setx:hover{color:var(--fg);border-color:var(--a1)}
 #veil{position:fixed;inset:0;background:rgba(10,10,16,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:70}
 #veil.on{display:flex}
+.dlg:has(.finlist){width:620px}
 .dlg{background:var(--solid);border:1px solid var(--line2);border-radius:4px;box-shadow:0 30px 80px rgba(0,0,0,var(--sh));padding:20px 22px;width:460px;max-width:90vw}
 .dlg h3{margin:0 0 8px;font-size:15px}
 .dlg ul{margin:6px 0 16px;padding-left:18px;max-height:300px;line-height:1.6;overflow:auto;color:var(--mid);user-select:text}
@@ -353,6 +354,7 @@ body:not([data-solo=files]) #cols{gap:22px}
 .tools{display:inline-flex;gap:2px;padding-left:14px;margin-left:2px;border-left:1px solid var(--line2);flex:none;-webkit-app-region:no-drag}
 .tbtn{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--dim);font:inherit;font-size:12px;letter-spacing:.02em;padding:6px 9px;border-radius:14px;cursor:pointer;-webkit-app-region:no-drag}
 .tbtn:hover{color:var(--fg);background:rgba(var(--ink),.08)}
+.tbtn.armed{color:var(--hi);background:rgba(var(--acc),.28)}
 .tbtn.busy{animation:hot 1.25s ease-in-out infinite;color:var(--hi)}
 .gear{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:0;border-radius:50%;background:none;color:var(--mid);cursor:pointer;flex:none;-webkit-app-region:no-drag}
 .gear .ic{width:26px;height:26px;stroke-width:1.4}
@@ -549,6 +551,13 @@ body[data-board="1"] #crumbs{visibility:hidden}
 #bcanvas[data-bg=weave]{background-image:repeating-linear-gradient(45deg,rgba(var(--acc),.07) 0 2px,transparent 2px 16px),repeating-linear-gradient(-45deg,rgba(var(--ink),.05) 0 2px,transparent 2px 16px);background-size:auto}
 #bcanvas[data-bg=plain]{background-image:none}
 .nbar .nlk{margin-right:auto;font-size:13px}
+.nbar .nfin:hover{background:rgba(0,90,0,.25);color:#0b3d0b}
+#bfin{min-width:0;margin-right:10px}
+.finlist{min-width:min(520px,80vw)}
+.finday{color:var(--dim);font-size:11.5px;margin:12px 0 4px}.finday:first-child{margin-top:0}
+.finrow{display:flex;align-items:center;gap:12px;padding:5px 0;border-top:1px solid var(--line)}
+.finrow .fintx{flex:1;min-width:0;overflow-wrap:anywhere}
+.finrow .btn{flex:none;padding:3px 10px;font-size:11.5px}
 #blinks{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0}
 #blinks .ln{fill:none;stroke:var(--pfiles);stroke-width:2.2;stroke-linecap:round;opacity:.85}
 #blinks .hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
@@ -622,6 +631,7 @@ body.dockon #dock2{display:flex}
 #dock2 .dsep{width:1px;height:26px;background:var(--line2);flex:none;margin:0 2px}
 #dock2 .dstart{color:var(--pfiles)}
 #dock2 .dstart svg{width:28px;height:28px}
+.arow.aadd{color:var(--pfiles);font-weight:600;border-bottom:1px solid var(--line);border-radius:5px 5px 0 0;margin-bottom:4px}
 .arow .ago.on{color:var(--a1);border-color:var(--a1)}
 #dock2 .dgrow{flex:1}
 #apick{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--dock) + 10px);z-index:62;width:340px;max-height:70vh;display:none;flex-direction:column;background:var(--solid);border:1px solid var(--line2);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,var(--sh));font-family:"Segoe UI",system-ui,sans-serif;font-size:14px}
@@ -2326,12 +2336,23 @@ function appPick(){
 }
 function drawAppList(){
   const q = $('aq').value.trim().toLowerCase(), list = $('alist'); list.textContent = '';
+  const addRow = el('div', 'arow aadd'); addRow.append(el('span', 'an', '+  Add a program from a file...'));
+  addRow.onclick = async () => {
+    try { const r = await call('appAddFile'); if (!r.added) return;
+      A.apps = (await call('appsList', {fresh: true})).apps;
+      if (!(S.dock || []).some(p => p.id === r.added.id)) S.dock = [...(S.dock || []), r.added];
+      saveAll(); loadIcons(); drawAppDock(); drawAppList(); toast(r.added.name + ' added and pinned to the dock.');
+    } catch (e) { fail(e); }
+  };
+  if (!q) list.append(addRow);
   const rows = A.apps.filter(x => !q || x.name.toLowerCase().includes(q)).slice(0, 200);
   if (!rows.length) list.append(el('div', 'ah', A.apps.length ? 'No app by that name.' : 'Reading the Start menu...'));
   for (const app of rows){
     const pinned = (S.dock || []).some(p => p.id === app.id), r = el('div', 'arow');
     const pin = el('button', 'ago' + (pinned ? ' on' : ''), pinned ? 'unpin' : 'pin'); pin.onclick = ev => { ev.stopPropagation(); S.dock = pinned ? S.dock.filter(p => p.id !== app.id) : [...(S.dock || []), {id: app.id, name: app.name}]; saveAll(); loadIcons(); drawAppDock(); drawAppList(); };
-    r.append(el('span', 'an', app.name), pin);
+    r.append(el('span', 'an', app.name));
+    if (app.added){ const rm = el('button', 'ago', 'forget'); rm.title = 'Take this program off the list. The program itself is not touched.'; rm.onclick = async ev => { ev.stopPropagation(); await call('appForget', {id: app.id}).catch(fail); S.dock = (S.dock || []).filter(p => p.id !== app.id); saveAll(); A.apps = (await call('appsList', {fresh: true})).apps; drawAppDock(); drawAppList(); }; r.append(rm); }
+    r.append(pin);
     r.onclick = () => { $('apick').classList.remove('on'); appStart(app); };
     list.append(r);
   }
@@ -2672,7 +2693,15 @@ async function syncNow(){
     $('veil').classList.add('on'); okb.focus();
   }
 }
-$('hsync').onclick = syncNow;
+// Sync is two clicks, so a stray one does nothing: the first arms it for a few seconds, the second runs it.
+let syncArm = 0;
+$('hsync').onclick = () => {
+  const b = $('hsync'), lb = b.querySelector('.lb');
+  if (b.classList.contains('busy')) return;
+  if (syncArm){ clearTimeout(syncArm); syncArm = 0; b.classList.remove('armed'); lb.textContent = 'sync'; return syncNow(); }
+  b.classList.add('armed'); lb.textContent = 'click again to sync';
+  syncArm = setTimeout(() => { syncArm = 0; b.classList.remove('armed'); lb.textContent = 'sync'; }, 3500);
+};
 $('hotx').onclick = () => { clearHot(); toast('Cleared.'); };
 $('hotgo').onclick = () => goHot(null);
 $('cin').addEventListener('compositionstart', () => { COMP.on = true; COMP.start = performance.now(); });
@@ -2712,6 +2741,31 @@ async function loadBoard(){
   B.z = B.notes.reduce((m, n) => Math.max(m, n.z || 0), 1);
   if (boardOpen()){ drawBoard(); drawRail(); loadFolders().then(drawRail); }
 }
+// Done: the note leaves the board and goes in the finished list, with the date. (The ✕ just deletes: for
+// notes that were wrong or doubled, which should not count as finished.)
+async function finishNotes(list, why){
+  list = list.filter(n => !noteEmpty(n)); if (!list.length) return;
+  try { await call('boardDoneAdd', {notes: list, why: why || ''}); } catch (e) { return fail(e); }
+  for (const n of list) removeNote(n, false);
+  toast(plural(list.length, 'note') + ' marked done. "finished" at the top right has the list.');
+}
+async function showFinished(){
+  let r; try { r = await call('boardDoneList'); } catch (e) { return fail(e); }
+  const d = $('dlg'); d.textContent = ''; d.append(el('h3', '', 'Finished'));
+  const box = el('div', 'handoff finlist');
+  if (!r.done.length) box.append(el('div', 'sd', 'Nothing yet. Tick ✓ on a note when it is done and it lands here with the date.'));
+  let day = '';
+  for (const x of r.done){
+    const dd = new Date(x.at).toLocaleDateString([], {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'});
+    if (dd !== day){ day = dd; box.append(el('div', 'finday', dd)); }
+    const row = el('div', 'finrow'), back = el('button', 'btn', 'put back');
+    back.onclick = async () => { try { const t = await call('boardDoneTake', {id: x.id}); const n = {...t.note, id: Math.random().toString(36).slice(2, 10), z: ++B.z, at: Date.now()}; B.notes.push(n); saveBoardNow(); if (boardOpen()){ drawBoard(); drawRail(); boardRefit(); } row.remove(); toast('Back on the board.'); } catch (e) { fail(e); } };
+    row.append(el('span', 'fintx', x.text + (x.why ? '  (' + x.why + ')' : '')), back); box.append(row);
+  }
+  d.append(box);
+  const bs = el('div', 'btns'), okb = el('button', 'btn pri', 'Close'); okb.onclick = () => $('veil').classList.remove('on'); bs.append(okb); d.append(bs);
+  $('veil').classList.add('on'); okb.focus();
+}
 // Notes Klaus marked as finished: ask once whether to take them off the board. Yes removes them, no keeps
 // them and stops asking about those.
 const noteLine = n => n.parts.map(x => x.p != null ? '/' + x.p : (x.t || '')).join(' ').replace(/\s+/g, ' ').trim().slice(0, 90) || '(empty note)';
@@ -2728,7 +2782,7 @@ async function boardDoneCheck(){
     const yes = await ask(done.length === 1 ? 'This note looks finished. Take it off the board?' : 'These ' + done.length + ' notes look finished. Take them off the board?',
       done.map(n => noteLine(n) + '  (' + n.done + ')'), [['No, keep', false], ['Yes, remove', true, true]]);
     const ids = new Set(done.map(n => n.id));
-    if (yes) B.notes = B.notes.filter(n => !ids.has(n.id));
+    if (yes){ try { await call('boardDoneAdd', {notes: done}); } catch (e) { /* still remove them */ } B.notes = B.notes.filter(n => !ids.has(n.id)); }
     else for (const n of B.notes) if (ids.has(n.id)){ delete n.done; n.keep = true; }
     saveBoardNow(); if (boardOpen()){ drawBoard(); drawRail(); }
     if (yes) toast(plural(done.length, 'note') + ' removed from the board.');
@@ -2888,7 +2942,9 @@ function noteEl(n){
     };
     addEventListener('mousemove', mv); addEventListener('mouseup', up);
   });
-  bar.append(lk, col, del);
+  const fin = el('button', 'nfin', '✓'); fin.title = 'Done. Takes this note off the board and writes it in the finished list.';
+  fin.onclick = () => finishNotes([n]);
+  bar.append(lk, col, fin, del);
   const tx = el('div', 'ntext'); tx.contentEditable = 'plaintext-only'; tx.spellcheck = true;
   for (const part of n.parts) tx.append(part.p != null ? tagEl(part.p) : document.createTextNode(part.t));
   const changed = () => { n.parts = readParts(tx); if (noteEmpty(n)) tx.textContent = ''; noteGo(e, n); saveBoard(); };
@@ -2990,6 +3046,7 @@ const BOARD_BGS = [['dots', 'Dots'], ['grid', 'Grid'], ['graph', 'Graph paper'],
 function boardBg(){ $('bcanvas').dataset.bg = BOARD_BGS.some(b => b[0] === S.bbg) ? S.bbg : 'dots'; }
 boardBg();
 { const mk = (id, text, title, fn) => { const b = el('button', 'btn bzb', text); b.id = id; b.title = title; b.onclick = fn; return b; };
+  $('bnew').before(mk('bfin', 'finished', 'Notes you have ticked off, by date. You can put one back.', showFinished));
   $('bnew').before(mk('bzout', '−', 'Zoom out. Ctrl + scroll does the same.', () => bzStep(1 / 1.2)), mk('bzfit', '100%', 'Fit every note in the window. Ctrl+0.', () => bzTo(bzFit())), mk('bzin', '+', 'Zoom in. Ctrl + scroll does the same.', () => bzStep(1.2))); }
 $('bgo').onclick = () => closeBoard();
 $('bbtn').onclick = () => (boardOpen() ? closeBoard() : openBoard());

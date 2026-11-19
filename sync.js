@@ -332,6 +332,8 @@ function create({ root, Problem }) {
       let raw = `# Raw notes from ${pcName()}, ${now.toLocaleString()}\n\nCovers ${state.last ? 'everything since the last sync on ' + new Date(since).toLocaleString() : 'the last seven days (first sync)'}. Root folder: ${path.basename(root())}.\n`;
       raw += `\n## Projects\n\n` + sizes.map(s => `- ${s.name}: ${s.count.toLocaleString()} files, ${kb(s.total)}${touched.has(s.name) ? '  (changed since last sync)' : ''}`).join('\n') + '\n';
       raw += `\n## Sticky notes on the board\n\n` + (board.length ? board.map(b => '- ' + b.replace(/\n+/g, ' / ')).join('\n') : '(none)') + '\n';
+      let finished = []; try { finished = (JSON.parse(await fsp.readFile(path.join(root(), '.folder-map', 'board-done.json'), 'utf8')).done || []).filter(x => x && x.at > since); } catch (e) { /* nothing finished yet */ }
+      raw += `\n## Finished since last sync (notes ticked off the board)\n\n` + (finished.length ? finished.slice(-60).map(x => `- ${String(x.text).replace(/\n+/g, ' / ')}${x.why ? '  (' + x.why + ')' : ''}  [${new Date(x.at).toLocaleString()}]`).join('\n') : '(none)') + '\n';
       raw += `\n## Git\n\n` + (repos.length ? repos.map(r => `### ${r.rel} (branch ${r.branch})\n${r.log || '(no new commits)'}\n${r.loose ? r.loose + ' file(s) changed but not committed.' : 'Nothing uncommitted.'}`).join('\n\n') : '(no new commits and nothing uncommitted)') + '\n';
       raw += `\n## Files changed (${changed.length})\n\n` + (changed.length ? changed.slice(0, 250).map(f => `- ${f.rel}  (${kb(f.size)}, ${new Date(f.at).toLocaleString()})`).join('\n') + (changed.length > 250 ? `\n- ... and ${changed.length - 250} more` : '') : '(none)') + '\n';
       raw += `\n## Loom chats since last sync (${chats.length})\n`;

@@ -22,9 +22,10 @@ let backend = null;
 
 // ---------- settings kept on this PC: the chosen root folder and recent ones ----------
 const settingsFile = () => path.join(app.getPath('userData'), 'folder-map.json');
-let settings = { root: null, recents: [], look: null };
+let settings = { root: null, recents: [], look: null, customApps: [] };
 function loadSettings() {
-  try { const s = JSON.parse(fs.readFileSync(settingsFile(), 'utf8')); settings = { root: s.root || null, recents: Array.isArray(s.recents) ? s.recents : [], look: goodLook(s.look) }; }
+  try { const s = JSON.parse(fs.readFileSync(settingsFile(), 'utf8')); settings = { root: s.root || null, recents: Array.isArray(s.recents) ? s.recents : [], look: goodLook(s.look),
+    customApps: (Array.isArray(s.customApps) ? s.customApps : []).filter(a => a && typeof a.path === 'string' && typeof a.name === 'string').slice(0, 60) }; }
   catch (e) { /* first run */ }
 }
 function saveSettings() {
@@ -116,7 +117,8 @@ app.whenReady().then(() => {
 
   const git = gitLib.create({ check: p => backend.check(p), root: () => backend.root(), Problem });
   const voice = require('./voice').create({ dir: path.join(app.getPath('userData'), 'piper') });
-  const apps = require('./apps').create({ Problem, getFileIcon: (f, o) => app.getFileIcon(f, o), readShortcut: f => shell.readShortcutLink(f), nativeImage });
+  const apps = require('./apps').create({ Problem, getFileIcon: (f, o) => app.getFileIcon(f, o), readShortcut: f => shell.readShortcutLink(f), nativeImage,
+    custom: () => settings.customApps, openPath: f => shell.openPath(f) });
   const sync = syncLib.create({ root: () => backend.root(), Problem });
   const actions = {
     // GIT tab. Every repository path is checked to be inside the root folder (see git.js).
@@ -169,6 +171,17 @@ app.whenReady().then(() => {
       return { on };
     },
     appsList: a => apps.list(a || {}),
+    // A program that is not in the Start menu (something you built, a portable tool): picked by you in the
+    // Windows file dialog, so the window can never add a path on its own.
+    appAddFile: async () => {
+      const r = await dialog.showOpenDialog(win, { title: 'Pick the program to add', properties: ['openFile'], filters: [{ name: 'Programs and shortcuts', extensions: ['exe', 'lnk', 'bat', 'cmd'] }, { name: 'All files', extensions: ['*'] }] });
+      if (r.canceled || !r.filePaths[0]) return { added: null };
+      const file = r.filePaths[0], id = 'file:' + file;
+      if (!settings.customApps.some(a => a.path.toLowerCase() === file.toLowerCase())) { settings.customApps.push({ path: file, name: path.basename(file).replace(/\.[^.]+$/, '') }); saveSettings(); }
+      const hit = settings.customApps.find(a => a.path.toLowerCase() === file.toLowerCase());
+      return { added: { id: 'file:' + hit.path, name: hit.name } };
+    },
+    appForget: a => { const id = String((a || {}).id || ''); settings.customApps = settings.customApps.filter(x => 'file:' + x.path !== id); saveSettings(); return { ok: true }; },
     winList: () => { apps.watch(list => { for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('apps:windows', list); }); return { wins: apps.windows() }; },
     winFocus: a => apps.focus({ pid: Number((a || {}).pid) }),
     winIcon: a => apps.winIcon({ pid: Number((a || {}).pid) }),
@@ -194,6 +207,9 @@ app.whenReady().then(() => {
     chatDelete: a => backend.chatDelete(a),
     boardGet: a => backend.boardGet(a),
     boardSave: a => backend.boardSave(a),
+    boardDoneAdd: a => backend.boardDoneAdd(a || {}),
+    boardDoneList: () => backend.boardDoneList(),
+    boardDoneTake: a => backend.boardDoneTake(a || {}),
     zip: a => backend.zip(a),
     // Sync: the written handoff between this PC and the phone (see sync.js).
     syncStatus: () => sync.status(),

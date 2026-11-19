@@ -562,6 +562,37 @@ function create({ workspace, fakeUsb }) {
     return { ok: true };
   }
 
+  // Finished notes: a running list kept beside the board (ROOT\.folder-map\board-done.json), newest last.
+  // Each entry keeps the whole note, so one can be put back on the board later.
+  const doneFile = () => path.join(WORKSPACE, STORE, 'board-done.json');
+  async function doneRead() { try { const j = JSON.parse(await fsp.readFile(doneFile(), 'utf8')); return Array.isArray(j.done) ? j.done : []; } catch (e) { return []; } }
+  async function doneWrite(list) {
+    await fsp.mkdir(path.join(WORKSPACE, STORE), { recursive: true });
+    const file = doneFile(), tmp = file + '.' + process.pid + '.tmp';
+    await fsp.writeFile(tmp, JSON.stringify({ done: list.slice(-3000) }, null, 1)); await fsp.rename(tmp, file);
+  }
+  async function boardDoneAdd({ notes, why }) {
+    if (!WORKSPACE) throw new Problem('Choose a root folder first.');
+    const list = await doneRead();
+    for (const n of (Array.isArray(notes) ? notes : []).slice(0, 100)) {
+      const parts = (Array.isArray(n && n.parts) ? n.parts : []).slice(0, 80).map(p => (p && typeof p.p === 'string' ? { p: p.p.slice(0, 400) } : { t: String((p && p.t) || '').slice(0, 4000) }));
+      const text = parts.map(p => (p.p != null ? '/' + p.p : p.t)).join(' ').replace(/\s+/g, ' ').trim().slice(0, 600);
+      if (!text) continue;
+      list.push({ id: Math.random().toString(36).slice(2, 12), at: Date.now(), text, tags: parts.filter(p => p.p != null).map(p => p.p), why: why ? String(why).slice(0, 300) : (n.done ? String(n.done).slice(0, 300) : ''),
+        note: { x: num(n.x, 0, 20000), y: num(n.y, 0, 20000), c: num(n.c, 0, 20), r: num(n.r, -6, 6), parts } });
+    }
+    await doneWrite(list);
+    return { count: list.length };
+  }
+  async function boardDoneList() { return { done: WORKSPACE ? (await doneRead()).slice(-400).reverse() : [] }; }
+  async function boardDoneTake({ id }) {
+    if (!WORKSPACE) throw new Problem('Choose a root folder first.');
+    const list = await doneRead(), i = list.findIndex(x => x.id === id);
+    if (i < 0) throw new Problem('That finished note is not in the list any more.');
+    const [hit] = list.splice(i, 1); await doneWrite(list);
+    return { note: hit.note };
+  }
+
   // Presses the Windows key, which opens the Start menu.
   async function startMenu() {
     if (process.platform !== 'win32') throw new Problem('The Start menu is a Windows thing.');
@@ -604,7 +635,7 @@ function create({ workspace, fakeUsb }) {
     return { ok: true };
   }
 
-  return { root: () => WORKSPACE, setRoot, adoptChats, preview, chatsList, chatSave, chatDelete, boardGet, boardSave, zip, props, dictate, startMenu, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
+  return { root: () => WORKSPACE, setRoot, adoptChats, preview, chatsList, chatSave, chatDelete, boardGet, boardSave, zip, props, dictate, startMenu, boardDoneAdd, boardDoneList, boardDoneTake, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
     startIndexing, TRASH, home: () => ({ home: WORKSPACE }) };
 }
 

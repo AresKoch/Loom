@@ -7,7 +7,7 @@ const { execFile, spawn } = require('child_process');
 
 const DULL = /uninstall|^readme|release notes|documentation|website|\bhelp\b|license|^about /i;
 
-function create({ Problem, getFileIcon, readShortcut, nativeImage }) {
+function create({ Problem, getFileIcon, readShortcut, nativeImage, custom = () => [], openPath }) {
   let cache = null, at = 0, links = null;
 
   // Every Start menu shortcut by name, for looking up an app's icon.
@@ -28,7 +28,10 @@ function create({ Problem, getFileIcon, readShortcut, nativeImage }) {
     return links;
   }
 
-  function list({ fresh } = {}) {
+  // Programs added by hand come first in the list, marked so they can be told apart.
+  const mine = () => custom().map(a => ({ id: 'file:' + a.path, name: a.name, file: a.path, added: true }));
+  async function list(o) { const r = await listStart(o); return { apps: [...mine(), ...r.apps] }; }
+  function listStart({ fresh } = {}) {
     if (process.env.LOOM_FAKE_APPS) { try { cache = JSON.parse(process.env.LOOM_FAKE_APPS); } catch (e) { cache = []; } return Promise.resolve({ apps: cache }); }
     if (process.platform !== 'win32') return Promise.resolve({ apps: [] });
     if (cache && !fresh && Date.now() - at < 300000) return Promise.resolve({ apps: cache });
@@ -52,6 +55,7 @@ function create({ Problem, getFileIcon, readShortcut, nativeImage }) {
   async function launch({ id }) {
     const apps = (await list()).apps, hit = apps.find(a => a.id === id);
     if (!hit) throw new Problem('That app is not in the Start menu any more.');
+    if (hit.file) { const err = await openPath(hit.file); if (err) throw new Problem('Could not open ' + hit.name + ': ' + err); return { ok: true, name: hit.name }; }
     if (process.platform !== 'win32') return { ok: true, name: hit.name };
     spawn('explorer.exe', ['shell:AppsFolder\\' + hit.id], { detached: true, stdio: 'ignore', windowsHide: false }).unref();
     return { ok: true, name: hit.name };
@@ -102,7 +106,8 @@ function create({ Problem, getFileIcon, readShortcut, nativeImage }) {
     const apps = (await list()).apps, hit = apps.find(a => a.id === id);
     if (!hit || process.platform !== 'win32') return { dataUrl: null };
     const tries = [];
-    const lnk = startLinks().get(hit.name.toLowerCase());
+    if (hit.file) { if (/\.lnk$/i.test(hit.file)) { try { const s = readShortcut(hit.file); if (s.icon) tries.push(expand(s.icon)); if (s.target) tries.push(expand(s.target)); } catch (e) { /* plain file */ } } else tries.push(hit.file); }
+    const lnk = hit.file ? null : startLinks().get(hit.name.toLowerCase());
     if (lnk) { try { const s = readShortcut(lnk); if (s.icon) tries.push(expand(s.icon)); if (s.target) tries.push(expand(s.target)); } catch (e) { /* not a plain shortcut */ } }
     const kf = /^(\{[0-9A-F-]{36}\})\\(.+)$/i.exec(hit.id);
     if (kf && KNOWN[kf[1].toUpperCase()]) tries.push(path.join(KNOWN[kf[1].toUpperCase()], kf[2]));
