@@ -47,6 +47,10 @@ USING IT
   folder to see inside it, or on a file to preview it.
 - Claude: it always knows which folder is open and which files are selected,
   so you can say "what do these do" or "what is in this folder".
+- MIC (next to SEND) opens Windows voice typing so you can talk instead of
+  typing. Same as pressing the Windows key and H. VOICE ON / OFF at the top of
+  the Claude pane makes Claude read its replies out loud. Voice and speed are
+  under SETTINGS.
 - When Claude saves a file, the folders on the way to it pulse in the tree.
   Click the "Writing ..." line in the chat to jump straight to the file.
 - Git: tick files, type a summary, Commit. The third button at the top of the

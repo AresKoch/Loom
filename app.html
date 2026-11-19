@@ -507,8 +507,12 @@ body[data-board="1"] #crumbs{visibility:hidden}
 .props{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;margin:10px 0 18px;user-select:text}
 .props span:nth-child(odd){color:var(--dim)}
 .props span:nth-child(even){overflow-wrap:anywhere}
-#ver{position:fixed;right:0;bottom:0;height:30px;line-height:30px;padding:0 12px 0 22px;font-size:10.5px;letter-spacing:.06em;color:var(--dim);opacity:.6;background:linear-gradient(90deg,transparent,rgb(var(--bar)) 16px);z-index:35;cursor:default;user-select:none}
-#ver:hover{opacity:1;color:var(--mid)}
+#cmic{border:1px solid var(--line2);background:rgba(var(--ink),.05);color:var(--mid);font:inherit;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;border-radius:9px;padding:10px 11px;cursor:pointer;flex:none}
+#cmic:hover{border-color:var(--a1);color:var(--fg)}
+#cvoice.on{background:var(--a1);color:var(--on);border-color:transparent;font-weight:700}
+#cvoice.talking{animation:hot 1.25s ease-in-out infinite}
+#ver{position:fixed;right:0;bottom:0;height:30px;line-height:30px;padding:0 12px 0 22px;font-size:10.5px;letter-spacing:.06em;color:color-mix(in srgb,var(--dim) 70%,transparent);background:linear-gradient(90deg,transparent,var(--bg) 16px);z-index:35;cursor:default;user-select:none}
+#ver:hover{color:var(--mid)}
 #keys{padding-right:74px}
 #keys .bk{display:none}
 body[data-board="1"] #keys>span:not(.r):not(.bk){display:none}
@@ -534,7 +538,7 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
 <aside id="claude"><div class="grip" data-p="claude" title="Drag to resize. Double click to reset."></div><div class="cin">
   <div class="chead">
     <span id="clogo"></span><span class="ctitle">Claude</span><span id="cstate"></span>
-    <button class="cbtn" id="cmodel"></button><button class="cbtn" id="ceffort"></button>
+    <button class="cbtn" id="cvoice" title="Read Claude's replies out loud. Click again to stop."></button><button class="cbtn" id="cmodel"></button><button class="cbtn" id="ceffort"></button>
     <span class="seg" id="cmode"><button data-m="look">look</button><button data-m="edit">edit</button><button data-m="auto">auto</button></span>
   </div>
   <div id="cusage"></div>
@@ -544,7 +548,7 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
     <div class="cchat">
       <div id="cmsgs"></div>
       <div id="cctx"></div>
-      <div class="cinput"><textarea id="cin" rows="2" placeholder="ask claude about this folder or these files" spellcheck="false"></textarea><button id="csend">send</button></div>
+      <div class="cinput"><textarea id="cin" rows="2" placeholder="ask claude about this folder or these files" spellcheck="false"></textarea><button id="cmic" title="Talk instead of typing. Opens Windows voice typing in this box (same as Windows key + H).">mic</button><button id="csend">send</button></div>
     </div>
   </div>
 </div></aside>
@@ -1574,7 +1578,7 @@ const EFFORTS = [['', 'default'], ['low', 'low'], ['medium', 'medium'], ['high',
 const WINDOW_NAME = {five_hour: 'session (5 hr)', seven_day: 'week'};
 
 function load(key, dflt){ try { const v = JSON.parse(localStorage.getItem(key) || 'null'); return v == null ? dflt : v; } catch (e) { return dflt; } }
-const S = Object.assign({view: 'split', side: 'right', chatsPos: 'side', mode: 'look', model: '', effort: '', usage: null, chatId: null, theme: '', gitRepo: null, panes: null, w: {}, boardStart: true, motion: 'full'}, load('fm.ui', {}));
+const S = Object.assign({view: 'split', side: 'right', chatsPos: 'side', mode: 'look', model: '', effort: '', usage: null, chatId: null, theme: '', gitRepo: null, panes: null, w: {}, boardStart: true, motion: 'full', speak: false, voice: '', rate: 1}, load('fm.ui', {}));
 if (!MODE_HINT[S.mode]) S.mode = 'look';
 // Chats are shared: they are saved inside the root folder, so everyone who opens the same
 // root folder (on any PC) sees the same list. Settings below stay on this PC.
@@ -1726,6 +1730,7 @@ function cBar(){
   $('cmodehint').textContent = MODE_HINT[S.mode];
   $('cmodel').textContent = 'model  ' + label(MODELS, S.model) + '  ▾';
   $('ceffort').textContent = 'effort  ' + label(EFFORTS, S.effort) + '  ▾';
+  $('cvoice').textContent = S.speak ? 'voice on' : 'voice off'; $('cvoice').classList.toggle('on', !!S.speak);
   const here = chat(), mine = C.busy && here === C.liveChat;
   $('csend').textContent = mine ? 'stop' : 'send'; $('csend').classList.toggle('stop', mine);
   const a = C.acct;
@@ -1888,6 +1893,7 @@ function cSend(){
   const c = ensureChat();
   if (C.busy){ if (c === C.liveChat) fm.claude.stop(); else toast('Claude is still working in another chat.'); return; }
   const text = $('cin').value.trim(); if (!text || !cur) return;
+  hush();
   const t = kbTargets();
   if (!c.msgs.length) c.title = text.replace(/\s+/g, ' ').slice(0, 60);
   // A chat last answered on another PC has no session here: carry the conversation over as text.
@@ -1922,10 +1928,54 @@ fm.claude.onEvent(ev => {
     else if (ev.error) cNote(c, ev.error, true);
     if (ev.denials && ev.denials.length) cNote(c, 'Not allowed in ' + S.mode + ' mode: ' + [...new Set(ev.denials)].slice(0, 4).join('; ') + '. Switch to ' + (S.mode === 'look' ? 'edit or auto' : 'auto') + ' and ask again if you want it done.');
     c.at = Date.now();
+    if (S.speak && !ev.stopped && !ev.error && c === chat()) speak(m.parts.filter(p => p.k === 'text').map(p => p.text).join('\n\n'));
     C.live = null; C.liveChat = null; C.busy = false; cBar(); cDraw(); drawChats(); saveAll(); saveChat(c);
     if (C.ranTool){ cache.clear(); pollDrives(true); if (cur) go(cur.path, {noHistory: true}); if (shown('git')) gitRefresh(); }   // Claude may have changed files
   }
 });
+
+// ---------- voice: Claude reads replies out loud, and the mic opens Windows voice typing ----------
+const TTS = window.speechSynthesis || null;
+function voices(){ return TTS ? TTS.getVoices() : []; }
+function hush(){ if (TTS) TTS.cancel(); $('cvoice').classList.remove('talking'); }
+// What gets read: the words, not the markup. Code blocks are named, not read out symbol by symbol.
+function speakable(t){
+  return String(t).replace(/```[\s\S]*?```/g, ' (code block) ').replace(/`([^`]+)`/g, '$1').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, ' link ').replace(/^\s{0,3}(#{1,6}|[-*+]|\d+\.)\s+/gm, '').replace(/[*_~>|]+/g, ' ').replace(/[ \t]+/g, ' ').trim();
+}
+function speak(text){
+  if (!TTS) return toast('This PC has no speech voices installed.', true);
+  hush();
+  const say = speakable(text); if (!say) return;
+  // Short pieces: long single utterances can cut out part way through.
+  const bits = []; let cur2 = '';
+  for (const sn of say.split(/(?<=[.!?:;])\s+|\n+/)){
+    if (!sn.trim()) continue;
+    if ((cur2 + ' ' + sn).length > 240 && cur2){ bits.push(cur2); cur2 = sn; } else cur2 = cur2 ? cur2 + ' ' + sn : sn;
+  }
+  if (cur2) bits.push(cur2);
+  const v = voices().find(x => x.name === S.voice) || null;
+  bits.forEach((b, i) => {
+    const u = new SpeechSynthesisUtterance(b); if (v) u.voice = v; u.rate = S.rate || 1;
+    if (i === 0) u.onstart = () => $('cvoice').classList.add('talking');
+    if (i === bits.length - 1) u.onend = u.onerror = () => $('cvoice').classList.remove('talking');
+    TTS.speak(u);
+  });
+}
+$('cvoice').onclick = () => {
+  if (TTS && TTS.speaking){ hush(); return toast('Stopped reading. Voice is still on for the next reply.'); }
+  S.speak = !S.speak; saveAll(); cBar();
+  if (S.speak) speak('Voice is on. I will read my replies out loud.'); else hush();
+};
+$('cmic').onclick = () => { $('cin').focus(); call('dictate').catch(fail); };
+function voiceMenu(x, y){
+  const all = voices(), en = all.filter(v => /^en/i.test(v.lang)), list = (en.length ? en : all).slice(0, 24);
+  const items = [{head: 'voice'}, {label: (!S.voice ? '✓  ' : '    ') + 'Windows default', run: () => { S.voice = ''; saveAll(); speak('This is the default voice.'); }}];
+  for (const v of list) items.push({label: (S.voice === v.name ? '✓  ' : '    ') + v.name.replace(/^Microsoft /, '').replace(/ - .*/, '') + '   ·   ' + v.lang, run: () => { S.voice = v.name; saveAll(); speak('This is how I sound.'); voiceMenu(x, y); }});
+  items.push('-', {head: 'speed'});
+  for (const [r, name] of [[.9, 'Slower'], [1, 'Normal'], [1.2, 'Faster'], [1.45, 'Fast']]) items.push({label: ((S.rate || 1) === r ? '✓  ' : '    ') + name, run: () => { S.rate = r; saveAll(); speak('This is the speed.'); voiceMenu(x, y); }});
+  menu(x, y, items);
+}
 
 function pick(btn, list, key){
   const r = btn.getBoundingClientRect();
@@ -1942,6 +1992,8 @@ function settingsMenu(btn){
     {label: tick(S.chatsPos === 'top') + 'Tabs across the top', run: () => { S.chatsPos = 'top'; cBar(); saveAll(); }});
   items.push('-', {head: 'which side claude sits on'}, {label: tick(S.side === 'right') + 'Claude on the right', run: () => { S.side = 'right'; afterPanes(); }},
     {label: tick(S.side === 'left') + 'Claude on the left', run: () => { S.side = 'left'; afterPanes(); }});
+  items.push('-', {head: 'talking'}, {label: tick(S.speak) + 'Claude reads replies out loud', run: () => { $('cvoice').click(); }},
+    {label: 'Voice and speed  ▸', run: () => voiceMenu(Math.max(8, r.right - 300), r.bottom + 4)});
   items.push('-', {head: 'motion when you move through folders'}, {label: tick(motionMs() === MOTION.full) + 'Smooth', run: () => { S.motion = 'full'; saveAll(); }},
     {label: tick(S.motion === 'quick') + 'Quick', run: () => { S.motion = 'quick'; saveAll(); }}, {label: tick(S.motion === 'off') + 'Off', run: () => { S.motion = 'off'; saveAll(); }});
   items.push('-', {head: 'when loom starts'}, {label: tick(S.boardStart) + 'Open on the board', run: () => { S.boardStart = true; saveAll(); }},

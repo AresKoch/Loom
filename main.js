@@ -150,6 +150,7 @@ app.whenReady().then(() => {
     boardGet: a => backend.boardGet(a),
     boardSave: a => backend.boardSave(a),
     zip: a => backend.zip(a),
+    dictate: () => backend.dictate(),
     appInfo: () => ({ version: app.getVersion() }),
     openRepo: async () => { await shell.openExternal('https://github.com/AresKoch/Loom/releases'); return { ok: true }; },
     props: a => backend.props(a),

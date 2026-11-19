@@ -512,6 +512,18 @@ function create({ workspace, fakeUsb }) {
       size: t.size, files: t.files, folders: t.folders, partial: t.partial, created: st.birthtimeMs, modified: st.mtimeMs };
   }
 
+  // ---------- voice typing ----------
+  // Opens Windows voice typing (the Win+H panel) by pressing Win+H for the person. Whatever
+  // text box has the cursor gets the words, so the app only has to focus its own box first.
+  async function dictate() {
+    if (process.platform !== 'win32') throw new Problem('Voice typing uses Windows voice typing, so it only works on Windows.');
+    const ps = "Add-Type -Namespace LoomW -Name K -MemberDefinition '[DllImport(\"user32.dll\")] public static extern void keybd_event(byte v, byte s, uint f, System.UIntPtr e);'; "
+      + '$z = [UIntPtr]::Zero; [LoomW.K]::keybd_event(0x5B,0,0,$z); [LoomW.K]::keybd_event(0x48,0,0,$z); [LoomW.K]::keybd_event(0x48,0,2,$z); [LoomW.K]::keybd_event(0x5B,0,2,$z)';
+    try { await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { timeout: 20000 }); }
+    catch (e) { throw new Problem('Could not open Windows voice typing. Press the Windows key and H together instead.'); }
+    return { ok: true };
+  }
+
   // ---------- the board ----------
   // Sticky notes for the start screen, kept with the chats (ROOT\.folder-map\board.json).
   // Folder tags are saved relative to the root, so the board still works if the root moves.
@@ -542,7 +554,7 @@ function create({ workspace, fakeUsb }) {
     return { ok: true };
   }
 
-  return { root: () => WORKSPACE, setRoot, preview, chatsList, chatSave, chatDelete, boardGet, boardSave, zip, props, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
+  return { root: () => WORKSPACE, setRoot, preview, chatsList, chatSave, chatDelete, boardGet, boardSave, zip, props, dictate, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
     startIndexing, TRASH, home: () => ({ home: WORKSPACE }) };
 }
 
