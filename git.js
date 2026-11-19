@@ -1,5 +1,5 @@
 // Git for Loom: the GIT tab. Runs the git program already on this PC.
-// It looks for Git for Windows first, then the copy that ships inside GitHub Desktop.
+// It looks for Git for Windows first, then any git on the PATH (Scoop, Chocolatey, winget), then the copy inside GitHub Desktop.
 // It only works on repositories inside the root folder. Nothing here stores a password or token:
 // sign in is whatever git on this PC already uses (Git Credential Manager, or a token in the remote URL).
 const fs = require('fs');
@@ -7,8 +7,7 @@ const fsp = fs.promises;
 const path = require('path');
 const { execFile } = require('child_process');
 
-const SKIP = new Set(['node_modules', '.git', '__pycache__', '.venv', 'venv', 'build', 'dist', '.folder-map', '.folder-map-trash',
-  'System Volume Information', '$RECYCLE.BIN']);
+const { HEAVY_DIRS: SKIP } = require('./skip');     // the same list search indexing uses
 const MAX_OUT = 600 * 1024;      // most diff text sent to the window
 
 function newestDesktopGit() {
@@ -27,11 +26,22 @@ function newestDesktopGit() {
   } catch (e) { /* GitHub Desktop not installed */ }
   return best && best.exe;
 }
+// Any git on the PATH: covers Scoop, Chocolatey, winget and portable installs.
+function onPath() {
+  if (process.platform !== 'win32') return null;
+  for (const dir of String(process.env.PATH || '').split(path.delimiter)) {
+    if (!dir) continue;
+    const t = path.join(dir.replace(/^"|"$/g, ''), 'git.exe');
+    try { if (fs.statSync(t).isFile()) return t; } catch (e) { /* next */ }
+  }
+  return null;
+}
 function findGit() {
   const pf = process.env.ProgramFiles || 'C:\\Program Files', pf86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
   const tries = [process.env.FOLDERMAP_GIT,
     path.join(pf, 'Git', 'cmd', 'git.exe'), path.join(pf86, 'Git', 'cmd', 'git.exe'),
     path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Git', 'cmd', 'git.exe'),
+    onPath(),
     newestDesktopGit()];
   for (const t of tries) { try { if (t && fs.statSync(t).isFile()) return t; } catch (e) { /* next */ } }
   return process.platform === 'win32' ? null : 'git';   // elsewhere (tests) use the one on PATH
@@ -206,13 +216,30 @@ function create({ check, root, Problem }) {
     const rels = [];
     for (const f of files) rels.push(path.relative(rp, filePath(rp, f)).split(path.sep).join('/'));
     const born = !(await run(rp, ['rev-parse', '--verify', '-q', 'HEAD'], { ok: true })).code;
-    if (born) await run(rp, ['reset', '-q'], { write: true });           // clear the staging area; working files are untouched
-    else await run(rp, ['rm', '-r', '-q', '--cached', '--ignore-unmatch', '.'], { write: true, ok: true });
-    await run(rp, ['add', '-A', '--pathspec-from-file=-', '--pathspec-file-nul'], { write: true, input: rels.join('\0') + '\0' });
-    const args = ['commit', '-q', '-m', summary];
+    const merging = fs.existsSync(path.join(rp, '.git', 'MERGE_HEAD'));
     const desc = String(description || '').trim();
-    if (desc) args.push('-m', desc);
-    await run(rp, args, { write: true, timeout: 60000 });
+    const input = rels.join('\0') + '\0';
+    if (born && !merging) {
+      // The normal case. Commit only the ticked files and leave the staging area alone, so anything
+      // staged from a terminal with "git add" is still staged afterwards. New files have to be
+      // known to git before a partial commit can take them, hence the intent-to-add step.
+      const st = (await run(rp, ['status', '--porcelain=v1', '-z', '-uall'])).out.split('\0');
+      const fresh = st.filter(l => l.startsWith('?? ')).map(l => l.slice(3)).filter(f => rels.includes(f));
+      if (fresh.length) await run(rp, ['add', '-N', '--pathspec-from-file=-', '--pathspec-file-nul'], { write: true, input: fresh.join('\0') + '\0' });
+      const args = ['commit', '-q', '--only', '-m', summary];
+      if (desc) args.push('-m', desc);
+      args.push('--pathspec-from-file=-', '--pathspec-file-nul');
+      await run(rp, args, { write: true, timeout: 60000, input });
+    } else {
+      // First commit of a repository, or finishing a merge: git cannot do a partial commit here,
+      // so the staging area is rebuilt from exactly the ticked files.
+      if (born) await run(rp, ['reset', '-q'], { write: true });         // working files are untouched
+      else await run(rp, ['rm', '-r', '-q', '--cached', '--ignore-unmatch', '.'], { write: true, ok: true });
+      await run(rp, ['add', '-A', '--pathspec-from-file=-', '--pathspec-file-nul'], { write: true, input });
+      const args = ['commit', '-q', '-m', summary];
+      if (desc) args.push('-m', desc);
+      await run(rp, args, { write: true, timeout: 60000 });
+    }
     const sha = (await run(rp, ['rev-parse', '--short', 'HEAD'])).out.trim();
     return { sha };
   }

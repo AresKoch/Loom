@@ -71,10 +71,19 @@ npm start
 npm run pack
 ```
 
-The app lands in `dist/Loom-win32-x64`. GitHub does the same on every push to `main` and attaches the zip to the release for the version in `package.json` (see `.github/workflows/build.yml`).
+The app lands in `dist/Loom-win32-x64`. Zip that folder and attach it to a GitHub release by hand.
+
+## Tests
+
+```
+npm test
+```
+
+Plain node, no extra packages. They cover the root-folder check (including links that point outside it), search indexing, the board, commits from the git pane, and how Claude Code is started.
 
 ## Files
 
+- `skip.js`  the one list of folders that search and the git pane do not crawl into
 - `main.js`  the app window and the list of things the window may ask for
 - `backend.js`  everything that touches the disk (listing, copy, move, trash, search, shared chats, previews)
 - `claude.js`  runs Claude Code headless and turns its output into events for the chat pane

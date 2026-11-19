@@ -1,5 +1,5 @@
 // Loom backend: everything that touches the disk.
-// No Electron in here, so the same code runs under the test server.
+// No Electron in here, so it can be loaded and tested with plain node (see test/).
 //
 // What it can do:
 //   - list folders in the workspace and on plugged in USB drives
@@ -12,6 +12,7 @@ const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 const { execFile } = require('child_process');
+const { HEAVY_DIRS } = require('./skip');
 
 const SKIP_DIRS = new Set(['node_modules', '.git', '__pycache__', '.venv', 'venv', '.pytest_cache',
   'System Volume Information', '$RECYCLE.BIN']);
@@ -27,9 +28,21 @@ class Problem extends Error {}
 function create({ workspace, fakeUsb }) {
   let WORKSPACE = workspace ? path.resolve(workspace) : null;   // the root folder; changeable with setRoot
   const norm = p => path.resolve(p).toLowerCase();
+  // Is p really inside root? Compared by where the two actually live on disk, so a junction or
+  // symlink inside the root that points somewhere else does not count as inside. Works with
+  // either slash, and with names that differ only by case on Windows.
+  const real = p => {                                   // for something that does not exist yet: the real spot of the nearest folder that does, plus the rest
+    let at = path.resolve(p); const tail = [];
+    for (;;) {
+      try { return path.join(fs.realpathSync.native(at), ...tail); }
+      catch (e) { const up = path.dirname(at); if (up === at) return path.resolve(p); tail.unshift(path.basename(at)); at = up; }
+    }
+  };
+  const fold = p => (process.platform === 'win32' ? p.toLowerCase() : p);
   const inside = (p, root) => {
-    const a = norm(p), r = norm(root).replace(/\\+$/, '');
-    return a === r || a.startsWith(r + '\\');
+    if (!p || !root) return false;
+    const rel = path.relative(fold(real(root)), fold(real(p)));
+    return rel === '' || (rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel));
   };
   const visibleFile = n => !(SKIP_FILES.has(n.toLowerCase()) || n.startsWith('~$'));
 
@@ -165,6 +178,7 @@ function create({ workspace, fakeUsb }) {
         if (e.isDirectory()) {
           if (SKIP_DIRS.has(e.name) || e.name === TRASH || e.name === STORE) continue;
           items.push([e.name.toLowerCase(), e.name, dir, true]);
+          if (HEAVY_DIRS.has(e.name)) continue;             // build output, toolchain sysroots: findable by name, not crawled
           await walk(path.join(dir, e.name));
         } else if (visibleFile(e.name)) items.push([e.name.toLowerCase(), e.name, dir, false]);
       }
@@ -412,7 +426,7 @@ function create({ workspace, fakeUsb }) {
     await getDrives(false);
     if (!Array.isArray(paths) || !paths.length) throw new Problem('Nothing selected.');
     const items = [];
-    const trashRoot = path.join(WORKSPACE, TRASH);
+    const trashRoot = WORKSPACE ? path.join(WORKSPACE, TRASH) : null;   // no root chosen yet: only USB deletes are possible
     for (const p of paths) {
       const ap = check(p);
       if (norm(ap) === norm(topOf(ap))) throw new Problem('The top folder itself cannot be deleted.');
@@ -422,9 +436,10 @@ function create({ workspace, fakeUsb }) {
     const deleted = [];
     let trashedTo = null;
     for (const ap of items) {
-      if (usbRootOf(ap) || inside(ap, trashRoot)) {
+      if (usbRootOf(ap) || (trashRoot && inside(ap, trashRoot))) {
         await fsp.rm(ap, { recursive: true, force: false });   // permanent: USB, or emptying the trash
       } else {
+        if (!trashRoot) throw new Problem('Choose a root folder first.');
         if (!trashedTo) {
           const d = new Date(), z = n => String(n).padStart(2, '0');
           trashedTo = path.join(trashRoot, `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`);

@@ -608,34 +608,6 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
 <div id="veil"><div class="dlg" id="dlg"></div></div>
 
 <script>
-// Outside the .exe (test server) there is no window.fm, so talk over localhost instead.
-if (!window.fm){
-  let onClaude = () => {};
-  window.fm = {
-    call: (name, arg) => fetch('/call/' + name, {method:'POST', body: JSON.stringify(arg || {})}).then(r => r.json()),
-    startDrag: null,
-    fileUrl: null,
-    root: {
-      get: () => fetch('/root/get', {method:'POST'}).then(r => r.json()),
-      set: p => fetch('/root/set', {method:'POST', body: JSON.stringify({path: p})}).then(r => r.json()),
-      choose: async () => { const p = await askText('Root folder (full path)', HOME, 'Use folder'); return p ? fm.root.set(p) : {canceled: true, root: HOME, recents}; },
-    },
-    claude: {
-      status: () => fetch('/claude/status', {method:'POST'}).then(r => r.json()),
-      stop: () => fetch('/claude/stop', {method:'POST'}).then(r => r.json()),
-      onEvent: cb => { onClaude = cb; },
-      send: async msg => {
-        const r = await fetch('/claude/send', {method:'POST', body: JSON.stringify(msg)});
-        const rd = r.body.getReader(), dec = new TextDecoder(); let b = '';
-        for (;;){
-          const {done, value} = await rd.read(); if (done) break;
-          b += dec.decode(value, {stream: true}); let i;
-          while ((i = b.indexOf('\n')) >= 0){ const l = b.slice(0, i); b = b.slice(i + 1); if (l) onClaude(JSON.parse(l)); }
-        }
-      },
-    },
-  };
-}
 async function call(name, arg){
   const r = await fm.call(name, arg);
   if (!r || !r.ok) throw new Error((r && r.error) || 'Something went wrong.');
@@ -1904,7 +1876,10 @@ function cSend(){
   C.liveChat = c; C.busy = true; C.ranTool = false;
   $('cin').value = ''; $('cin').style.height = 'auto';
   cBar(); cDraw(); drawChats(); saveChat(c);
-  fm.claude.send({prompt: text, sessionId: elsewhere ? null : c.session, history, mode: S.mode, model: S.model, effort: S.effort, folder: cur.path, selected: t});
+  // History carried over from another computer is unverified text, so that one message never runs in auto mode.
+  const mode = elsewhere && S.mode === 'auto' ? 'look' : S.mode;
+  if (mode !== S.mode){ c.msgs.splice(c.msgs.length - 1, 0, {role: 'note', text: 'This chat was last continued on another computer, so this one message runs in look mode. Your next message here runs in auto as normal.'}); cDraw(); }
+  fm.claude.send({prompt: text, sessionId: elsewhere ? null : c.session, history, mode, model: S.model, effort: S.effort, folder: cur.path, selected: t});
 }
 fm.claude.onEvent(ev => {
   if (ev.t === 'usage'){ S.usage = {windows: {...((S.usage && S.usage.windows) || {}), ...ev.windows}, at: Date.now()}; drawUsage(); return; }
