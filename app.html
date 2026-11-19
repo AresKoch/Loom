@@ -515,6 +515,8 @@ body[data-board="1"] #crumbs{visibility:hidden}
 #cvoice.talking{animation:hot 1.25s ease-in-out infinite}
 .handoff{max-height:56vh;overflow:auto;margin:8px 0 16px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--code);color:var(--mid);user-select:text;line-height:1.6;font-size:12.5px}
 .dlg:has(.handoff){width:720px}
+#hotclear{position:absolute;top:8px;right:18px;z-index:8;border:1px solid rgba(var(--acc),.6);background:rgba(var(--float),.94);color:var(--hi);font:inherit;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border-radius:20px;padding:4px 12px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,calc(var(--sh)*.6))}
+#hotclear:hover{background:var(--a1);color:var(--on)}
 #ver{position:fixed;right:0;bottom:0;height:30px;line-height:30px;padding:0 12px 0 22px;font-size:10.5px;letter-spacing:.06em;color:color-mix(in srgb,var(--dim) 70%,transparent);background:linear-gradient(90deg,transparent,var(--bg) 16px);z-index:35;cursor:default;user-select:none}
 #ver:hover{color:var(--mid)}
 #keys{padding-right:74px}
@@ -540,6 +542,7 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
 <div id="stage">
   <div id="cols"></div>
   <svg id="wires"></svg>
+  <button id="hotclear" style="display:none" title="Stop the pulsing for everything Claude saved. Esc does the same. Right click a pulsing folder to clear just that one."></button>
 </div>
 <aside id="claude"><div class="grip" data-p="claude" title="Drag to resize. Double click to reset."></div><div class="cin">
   <div class="chead">
@@ -1351,6 +1354,7 @@ document.addEventListener('contextmenu', ev => {
     const items = [{head: one ? files[0].name : plural(files.length, 'file') + ' selected'}];
     if (one) items.push({label: 'Open', strong: true, run: () => call('open', {path: paths[0]}).catch(fail)});
     if (one) items.push({label: 'Show in File Explorer', run: () => call('reveal', {path: paths[0]}).catch(fail)});
+    if (paths.some(isHot)) items.push({label: 'Stop the pulse', run: () => paths.forEach(clearHot)});
     items.push('-', {label: 'Cut    ctrl+x', run: () => clipPaths(paths, true)}, {label: 'Copy    ctrl+c', run: () => clipPaths(paths, false)});
     if (clip.paths.length) items.push({label: 'Paste here    ctrl+v', run: () => paste()});
     items.push('-');
@@ -1367,6 +1371,7 @@ document.addEventListener('contextmenu', ev => {
     const name = dirPath.replace(/\\$/, '').split('\\').pop();
     const items = [{head: name}, {label: 'Open', strong: true, run: () => go(dirPath)},
       {label: 'Open in File Explorer', run: () => call('reveal', {path: dirPath}).catch(fail)}];
+    if (isHot(dirPath)) items.push({label: 'Stop the pulse here', run: () => clearHot(dirPath)});
     if (!drop) items.push('-', {label: 'Cut', run: () => clipPaths([dirPath], true)}, {label: 'Copy', run: () => clipPaths([dirPath], false)});
     if (clip.paths.length) items.push({label: 'Paste into ' + name, run: () => paste(dirPath)});
     if (!drop) items.push('-', {label: 'Rename', run: () => renamePath(dirPath)}, {label: 'Delete', run: () => deleteItems([dirPath])});
@@ -1384,6 +1389,7 @@ document.addEventListener('contextmenu', ev => {
     items.push({label: 'New folder' + (here === cur ? '    ctrl+shift+n' : ''), run: () => newFolder(here.path)}, '-',
       {label: 'Open in File Explorer', run: () => call('reveal', {path: here.path}).catch(fail)},
       {label: 'Copy path', run: () => copyPath(here.path)}, {label: 'Properties', run: () => showProps([here.path])}, '-', {label: 'Refresh    f5', run: refresh});
+    if (touched.size) items.push({label: 'Stop all pulses    esc', run: () => clearHot()});
     return menu(ev.clientX, ev.clientY, items);
   }
   closeMenu();
@@ -1537,7 +1543,7 @@ document.addEventListener('keydown', ev => {
   else if (low === 'm' || k === 'ContextMenu' || (ev.shiftKey && k === 'F10')){ ev.preventDefault(); kbMenu(); }
   else if (low === 'u' && !ev.ctrlKey){ ev.preventDefault(); if (drives.length) go(drives[0].root, {keyboard: true}); else toast('No USB drive plugged in.'); }
   else if (low === 'h' && !ev.ctrlKey){ ev.preventDefault(); go(HOME, {keyboard: true}); }
-  else if (k === 'Escape'){ sel.clear(); anchor = -1; paintSel(); }
+  else if (k === 'Escape'){ if (touched.size && !sel.size) clearHot(); sel.clear(); anchor = -1; paintSel(); }
   else if (k === 'F5'){ ev.preventDefault(); refresh(); }
 });
 document.addEventListener('mouseup', ev => {            // mouse back button
@@ -1830,10 +1836,20 @@ for (const g of document.querySelectorAll('.grip')){
 const touched = new Map();                 // lower case path -> {path, at, seen}
 const winPath = p => String(p || '').replace(/\//g, '\\').replace(/\\+$/, '');
 function touch(p){ p = winPath(p); if (!p) return; touched.set(p.toLowerCase(), {path: p, at: Date.now(), seen: 0}); drawWires(); }
+// Stop the pulse: for one folder or file and everything under it, or for everything.
+function isHot(p){ const k = winPath(p).toLowerCase(); for (const t of touched.keys()) if (t === k || t.startsWith(k + '\\')) return true; return false; }
+function clearHot(p){
+  if (p == null) touched.clear();
+  else { const k = winPath(p).toLowerCase(); for (const t of [...touched.keys()]) if (t === k || t.startsWith(k + '\\')) touched.delete(t); }
+  drawWires();
+}
 function paintHot(){
   const now = Date.now();
   for (const [k, t] of touched) if (now - t.at > 600000 || (t.seen && now - t.seen > 20000)) touched.delete(k);
   const keys = [...touched.keys()];
+  const chip = $('hotclear'), waiting = keys.filter(k => !touched.get(k).seen).length;
+  chip.style.display = keys.length ? '' : 'none';
+  if (keys.length) chip.textContent = (waiting ? plural(waiting, 'new save') : 'saves found') + '  ·  clear';
   for (const e of document.querySelectorAll('#cols [data-path]')){
     const p = winPath(e.dataset.path).toLowerCase(), isFile = e.classList.contains('row');
     const hot = keys.some(k => k === p || (!isFile && k.startsWith(p + '\\')));
@@ -2052,6 +2068,7 @@ async function syncNow(){
   }
 }
 $('hsync').onclick = syncNow;
+$('hotclear').onclick = () => { clearHot(); toast('Cleared.'); };
 $('cin').addEventListener('keydown', ev => {
   if (!appKey(ev)){
     if (ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); cSend(); }
