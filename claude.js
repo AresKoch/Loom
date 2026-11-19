@@ -22,7 +22,10 @@ const PANEL_NOTE =
   'You are running inside Loom, a desktop app for browsing folders with you built in. ' +
   'Your replies appear in a chat pane next to the file browser, so keep them compact: short sentences, short lists, no wide tables. ' +
   'Each message from the user starts with a [Loom] block saying which folder they have open and which files they have selected. ' +
-  'When they say "this", "these", "here" or "this folder", they mean those. Use full paths from that block when you read or change files.';
+  'When they say "this", "these", "here" or "this folder", they mean those. Use full paths from that block when you read or change files. ' +
+  'The user keeps a board of sticky notes in the file .folder-map\\board.json inside the root folder: {"notes":[{"id":"8 lowercase letters or digits","x":0,"y":0,"c":0,"parts":[{"t":"text"},{"p":"folder/path/relative/to/root"}]}]}. ' +
+  'To add a note, add an object to that list and keep every note already there. Never delete a note yourself. If you notice that what a note asks for is already finished, set "done" on that note to a few words saying why, and mention it; Loom then asks the user whether to take it off the board. Leave any note that has "keep": true alone. A note may carry "links": [ids of other notes]: those notes follow on from it, so it should be done first. ' +
+  'In this app the user calls you Klaus. It is their nickname for their project helper here, so answer to it naturally. You are still Claude, made by Anthropic; say so plainly if anyone asks what you are.';
 
 // The Claude desktop app keeps its own copy of Claude Code. Where that lives depends on how the
 // desktop app was installed (normal installer, Microsoft Store package, or a work build).
@@ -148,6 +151,16 @@ function toolLine(name, input) {
 }
 
 // getRoot() returns the folder Claude works from (the app's current root folder).
+// What "default" means on this PC, as far as it can be read: the model and effort saved in Claude Code's own settings.
+function savedDefaults() {
+  const out = { model: null, effort: null };
+  try {
+    const s = JSON.parse(fs.readFileSync(path.join(require('os').homedir(), '.claude', 'settings.json'), 'utf8'));
+    if (typeof s.model === 'string') out.model = s.model.slice(0, 80);
+    if (typeof s.effortLevel === 'string') out.effort = s.effortLevel.slice(0, 20);
+  } catch (e) { /* no settings file: Claude Code picks */ }
+  return out;
+}
 function create({ getRoot, claudePath }) {
   const kids = new Map();                 // chat id -> the Claude process answering in that chat
   const reported = new Map();             // saved file -> when it was reported, so two chats do not both claim it
@@ -155,12 +168,12 @@ function create({ getRoot, claudePath }) {
   function status() {
     const exe = findClaude(claudePath);
     return new Promise(resolve => {
-      if (!exe) return resolve({ found: false, loggedIn: false });
+      if (!exe) return resolve({ found: false, loggedIn: false, defaults: savedDefaults() });
       const how = launch(exe, ['auth', 'status']);
       execFile(how.file, how.args, { windowsHide: true, timeout: 20000, ...how.options }, (err, out) => {
         let info = {};
         try { info = JSON.parse(out); } catch (e) { /* older build prints text */ }
-        resolve({ found: true, loggedIn: !!info.loggedIn, plan: info.subscriptionType || null, email: info.email || null, program: exe });
+        resolve({ found: true, loggedIn: !!info.loggedIn, plan: info.subscriptionType || null, email: info.email || null, program: exe, defaults: savedDefaults() });
       });
     });
   }

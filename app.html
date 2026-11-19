@@ -47,7 +47,7 @@
 
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
-body{margin:0;color:var(--fg);font:13px/1.45 var(--mono);user-select:none;display:grid;grid-template-rows:44px minmax(0,1fr) 30px;grid-template-columns:minmax(0,1fr);
+body{margin:0;color:var(--fg);font:13px/1.45 var(--mono);user-select:none;display:grid;grid-template-rows:58px minmax(0,1fr) 30px;grid-template-columns:minmax(0,1fr);
   background:var(--bg)}
 /* a little film grain over everything */
 body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;opacity:var(--grain);
@@ -73,7 +73,7 @@ svg.i{width:14px;height:14px;flex:none;fill:currentColor}
 #q::placeholder{color:var(--dim)}
 #q:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(var(--acc),.14)}
 #clock{color:var(--mid);font-size:12px;flex:none}
-#results{position:absolute;top:calc(100% + 8px);right:0;width:560px;max-height:62vh;overflow:auto;background:rgba(var(--float),.94);backdrop-filter:blur(30px);border:1px solid var(--line2);border-radius:4px;box-shadow:0 24px 70px rgba(0,0,0,var(--sh));display:none;z-index:40;padding:5px}
+#results{position:absolute;top:calc(100% + 8px);left:0;width:560px;max-width:calc(100vw - 30px);max-height:62vh;overflow:auto;background:rgba(var(--float),.94);backdrop-filter:blur(30px);border:1px solid var(--line2);border-radius:4px;box-shadow:0 24px 70px rgba(0,0,0,var(--sh));display:none;z-index:40;padding:5px}
 #results.on{display:block}
 .res{display:flex;gap:9px;align-items:center;padding:6px 9px;border-radius:2px;cursor:pointer}
 .res.act,.res:hover{background:rgba(var(--acc),.16)}
@@ -161,7 +161,7 @@ body.dragging .node.over svg{color:var(--on)}
 #marq{position:fixed;border:1px solid var(--a1);background:rgba(var(--acc),.12);border-radius:3px;display:none;z-index:30;pointer-events:none}
 
 /* USB dock */
-/* Claude panel */
+/* Klaus panel */
 #claude{grid-column:2;grid-row:2;width:440px;padding:12px 12px 12px 0;min-height:0}
 #claude.off{display:none}
 .cin{height:100%;display:flex;flex-direction:column;border-radius:4px;background:var(--tile);border:1px solid var(--line);overflow:hidden}
@@ -177,7 +177,7 @@ body.dragging .node.over svg{color:var(--on)}
 #cmodehint{padding:5px 12px;color:var(--dim);font-size:11px;border-bottom:1px solid var(--line);flex:none}
 #cmsgs{flex:1;overflow-y:auto;padding:10px 12px;min-height:0;user-select:text}
 .cm{margin:0 0 12px;line-height:1.55;word-wrap:break-word;overflow-wrap:anywhere}
-/* what you said sits to the right in your own colour; what Claude said stays plain on the left */
+/* what you said sits to the right in your own colour; what Klaus said stays plain on the left */
 .cm.user{background:color-mix(in srgb,var(--pfiles) 20%,transparent);border:1px solid color-mix(in srgb,var(--pfiles) 45%,transparent);border-right:3px solid var(--pfiles);border-radius:3px;padding:8px 12px;color:var(--hi);width:fit-content;max-width:86%;margin:18px 0 14px auto}
 .cm.user .cx{display:block;color:var(--dim);font-size:10.5px;margin-top:3px}
 .cm.note{color:var(--dim);font-size:11.5px;border-left:2px solid var(--line2);padding-left:9px}
@@ -241,6 +241,7 @@ body.dragging .droptip{display:block}
 #toast{position:fixed;bottom:46px;left:calc(50% - 134px);transform:translateX(-50%) translateY(8px);background:rgba(var(--float),.95);border:1px solid var(--a2);color:var(--fg);padding:8px 15px;border-radius:3px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;max-width:70vw;z-index:60;box-shadow:0 14px 40px rgba(0,0,0,.5)}
 #toast.on{opacity:1;transform:translateX(-50%)}
 #toast.bad{border-color:var(--red);color:var(--red)}
+::view-transition-old(root),::view-transition-new(root){animation-duration:1.5s;animation-timing-function:ease-in-out}
 /* ---------- settings: a roomy window over the app, sections down the left ---------- */
 #setv{position:fixed;inset:0;background:rgba(10,10,16,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:60}
 #setv.on{display:flex}
@@ -320,7 +321,7 @@ body:not([data-solo=files]) .col.peek{width:calc(290px*var(--k,1))}
 body:not([data-solo=files]) .col.anc{width:calc(176px*var(--k,1))}
 body:not([data-solo=files]) #cols{gap:22px}
 
-/* ---- where Claude just saved: the folders on the way there, the file, and the wire pulse ---- */
+/* ---- where Klaus just saved: the folders on the way there, the file, and the wire pulse ---- */
 @keyframes hot{0%,100%{box-shadow:inset 0 0 0 1.5px rgba(var(--acc),.95);background:rgba(var(--acc),.12)}50%{box-shadow:inset 0 0 0 1.5px rgba(var(--acc),.30);background:rgba(var(--acc),.34)}}
 .node.hot,.row.hot{animation:hot 1.25s ease-in-out infinite;color:var(--hi)}
 .node.hot svg{color:var(--a1)}
@@ -395,14 +396,15 @@ body:not([data-solo=files]) #cols{gap:22px}
 #cmsgs{padding:14px}
 .cm{font-size:13.5px}
 .cempty{text-align:center;padding:9vh 10px 0;color:var(--dim)}
-.critter{width:70px;height:50px;color:var(--a1);display:block;margin:0 auto 14px}
+.critter{width:92px;height:59px;color:var(--a1);display:block;margin:0 auto 16px}
+#clogo .critter{width:34px;height:22px;margin:0}
 .ehi{font-size:19px;font-weight:700;color:var(--fg);letter-spacing:-.01em}
 .esub{margin:6px 0 16px;font-size:12px}
 .etry{display:block;margin:6px auto;border:1px solid var(--line2);background:none;color:var(--mid);font:inherit;font-size:12px;border-radius:3px;padding:6px 12px;cursor:pointer}
 .etry:hover{border-color:var(--a1);color:var(--fg)}
 .etry span{color:var(--dim);font-size:10.5px}
 .cwait{display:flex;align-items:center;gap:8px}
-.cwait .critter{width:22px;height:16px;margin:0;animation:hop .7s steps(2) infinite}
+.cwait .critter{width:28px;height:18px;margin:0;animation:hop .7s steps(2) infinite}
 @keyframes hop{50%{transform:translateY(-3px)}}
 #cin{font-size:13.5px;padding:10px 12px}
 #csend{padding:11px 14px}
@@ -423,7 +425,7 @@ body:not([data-solo=files]) #cols{gap:22px}
 /* ---- GIT tab: repositories under the root folder, laid out like GitHub Desktop ---- */
 #git{display:none;flex:0 0 50%;min-width:0;min-height:0;padding:12px 12px 12px 0;flex-direction:column;gap:10px;position:relative}
 body[data-git="1"] #git{display:flex}
-body[data-files="0"] .searchwrap,body[data-files="0"] #crumbs{visibility:hidden}
+body[data-files="0"] .searchwrap,body[data-files="0"] #crumbs,body[data-board="1"] .searchwrap{visibility:hidden}
 #keys .gk{display:none}
 body[data-kf=git] #keys>span:not(.r):not(.gk){display:none}
 body[data-kf=git] #keys .gk{display:inline}
@@ -507,7 +509,7 @@ body[data-kf=git] .col.act{border-color:var(--line2)}
 }
 
 /* ---------- board: the start screen. Sticky notes, each can tag folders with / ---------- */
-#board{position:fixed;top:44px;bottom:30px;left:0;right:0;z-index:30;display:none;flex-direction:column;background:var(--bg)}
+#board{position:fixed;top:58px;bottom:30px;left:0;right:0;z-index:30;display:none;flex-direction:column;background:var(--bg)}
 body[data-board="1"] #board{display:flex}
 #micbar{display:none;align-items:center;gap:12px;margin:0 14px 12px;padding:9px 12px;border:1px solid var(--a1);border-radius:3px;background:rgba(var(--ink),.05);flex:none}
 body.miclive[data-board="1"] #micbar{display:flex}
@@ -518,21 +520,44 @@ body.miclive[data-board="1"] #micbar{display:flex}
 #cmic.live .ic{animation:hot 1.25s ease-in-out infinite}
 body[data-board="1"] #crumbs{visibility:hidden}
 #bbtn{-webkit-app-region:no-drag}
-#bbtn.on{background:var(--a1);color:var(--on);font-weight:700;border-color:transparent}
-.bhead{display:flex;align-items:flex-end;gap:12px;padding:20px 26px 14px;border-bottom:1px solid var(--line)}
+#bbtn{background:#0a0a0a;color:#fff;border-color:rgba(255,255,255,.4)}
+#bbtn:hover{background:#1c1c1c;color:#fff}
+#bbtn.on{background:#e6d9c0;color:#16130e;font-weight:700;border-color:#e6d9c0}
+/* the board is just the notes: no headline, no folder list. One quiet + note button floats in the corner. */
+.bhead{position:absolute;top:12px;right:22px;z-index:5;display:flex;padding:0;border:0}
+.bhead>div,.bhead .sp,#bgo{display:none !important}
+#bnew{opacity:.75}#bnew:hover{opacity:1}
+.bhead{gap:6px}
+.bzb{opacity:.7;min-width:34px;padding-left:9px;padding-right:9px}.bzb:hover{opacity:1}
+#bzfit{min-width:58px;margin-right:10px}
 .bq{font-size:24px;font-weight:700;color:var(--hi);line-height:1.2}
 .bsub{color:var(--dim);font-size:12px;margin-top:5px}
 .bhead .sp{flex:1}
 .bbody{flex:1;display:flex;min-height:0}
-#bproj{width:236px;flex:none;overflow:auto;padding:6px 10px 16px 16px;border-right:1px solid var(--line)}
+#bproj{display:none}
 .bph{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding:12px 8px 6px}
 .bp{display:flex;width:100%;gap:8px;align-items:baseline;text-align:left;border:0;background:none;color:var(--fg);font:inherit;padding:7px 8px;border-radius:2px;cursor:pointer}
 .bp:hover{background:rgba(var(--acc),.18);color:var(--hi)}
 .bp span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bp small{flex:none;color:var(--dim);font-size:10.5px}
 #bwith{margin:0 8px}
-#bwrap{flex:1;overflow:auto;position:relative}
+#bwrap{flex:1;overflow:auto;position:relative;isolation:isolate}
 #bcanvas{position:relative;min-width:100%;min-height:100%;background-image:radial-gradient(rgba(var(--ink),.13) 1px,transparent 1.5px);background-size:26px 26px}
+#bcanvas[data-bg=grid]{background-image:linear-gradient(rgba(var(--ink),.07) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--ink),.07) 1px,transparent 1px);background-size:34px 34px}
+#bcanvas[data-bg=graph]{background-image:linear-gradient(rgba(var(--ink),.11) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--ink),.11) 1px,transparent 1px),linear-gradient(rgba(var(--ink),.045) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--ink),.045) 1px,transparent 1px);background-size:100px 100px,100px 100px,20px 20px,20px 20px}
+#bcanvas[data-bg=lines]{background-image:linear-gradient(rgba(var(--ink),.08) 1px,transparent 1px);background-size:100% 30px}
+#bcanvas[data-bg=weave]{background-image:repeating-linear-gradient(45deg,rgba(var(--acc),.07) 0 2px,transparent 2px 16px),repeating-linear-gradient(-45deg,rgba(var(--ink),.05) 0 2px,transparent 2px 16px);background-size:auto}
+#bcanvas[data-bg=plain]{background-image:none}
+.nbar .nlk{margin-right:auto;font-size:13px}
+#blinks{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0}
+#blinks .ln{fill:none;stroke:var(--pfiles);stroke-width:2.2;stroke-linecap:round;opacity:.85}
+#blinks .hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
+#blinks .hit:hover + .ln{stroke:var(--hi);stroke-width:3}
+#blinks .ar{fill:var(--pfiles)}
+#blinks .tmp{fill:none;stroke:var(--hi);stroke-width:2;stroke-dasharray:6 5}
+.sticky.picked{outline:2px solid var(--hi);outline-offset:3px}
+#bmarq{position:fixed;z-index:44;border:1px solid var(--pfiles);background:color-mix(in srgb,var(--pfiles) 14%,transparent);pointer-events:none;display:none}
+#bwrap.pan{cursor:grabbing}
 .bempty{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);color:var(--dim);text-align:center;line-height:2;pointer-events:none;white-space:nowrap}
 .bempty b{display:block;color:var(--mid);font-size:16px}
 .sticky{position:absolute;width:218px;border-radius:3px;background:var(--nc);color:#26221b;box-shadow:0 1px 1px rgba(0,0,0,.25),0 10px 22px rgba(0,0,0,calc(var(--sh)*.55))}
@@ -565,16 +590,16 @@ body[data-board="1"] #crumbs{visibility:hidden}
 #cvoice.talking{animation:hot 1.25s ease-in-out infinite}
 .handoff{max-height:56vh;overflow:auto;margin:8px 0 16px;padding:10px 12px;border:1px solid var(--line);border-radius:3px;background:var(--code);color:var(--mid);user-select:text;line-height:1.6;font-size:12.5px}
 .dlg:has(.handoff){width:720px}
-#notices{position:fixed;top:44px;left:0;right:0;z-index:40;display:flex;flex-direction:column}
+#notices{position:fixed;top:58px;left:0;right:0;z-index:40;display:flex;flex-direction:column}
 .nt{height:34px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line2);background:color-mix(in srgb,var(--nc) 16%,var(--bg));color:var(--hi);font-size:12.5px}
-.nt.nfiles{--nc:var(--pcl)}.nt.ngit{--nc:var(--pgit)}
+.nt.nupd{--nc:var(--pfiles)}.nt.nfiles{--nc:var(--pcl)}.nt.ngit{--nc:var(--pgit)}
 .nt .ndot{width:9px;height:9px;border-radius:50%;background:var(--nc);flex:none;animation:hot 1.25s ease-in-out infinite}
 .nt .sp{flex:1}
 .nt button{border:1px solid var(--line2);background:none;color:var(--fg);font:inherit;font-size:11.5px;border-radius:3px;padding:4px 12px;cursor:pointer}
 .nt button.pri{background:var(--nc);color:var(--on);border-color:transparent;font-weight:700}
 .nt button:hover{border-color:var(--nc)}
 body.hasnote #main{padding-top:var(--nh)}
-body.hasnote #board{top:calc(44px + var(--nh))}
+body.hasnote #board{top:calc(58px + var(--nh))}
 #hotclear{display:none !important;position:absolute;top:8px;right:18px;z-index:8;display:flex;align-items:center;gap:4px;border:1px solid rgba(var(--acc),.6);background:rgba(var(--float),.94);color:var(--hi);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:3px 4px 3px 12px;box-shadow:0 6px 18px rgba(0,0,0,calc(var(--sh)*.6))}
 #hotclear button{border:0;background:rgba(var(--ink),.1);color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;border-radius:4px;padding:3px 10px;cursor:pointer}
 #hotclear button:hover{background:var(--a1);color:var(--on)}
@@ -582,6 +607,42 @@ body.hasnote #board{top:calc(44px + var(--nh))}
 /* a parent column squeezed narrow: give the room to the name, not the count */
 .col.anc{container-type:inline-size}
 @container (max-width:150px){.col.anc .node{padding:0 6px;gap:6px}.col.anc .node .nc,.col.anc .node .ch{display:none}}
+/* ---------- app dock: your programs along the bottom, centred, like the taskbar ---------- */
+body{--dock:0px}
+body.dockon{--dock:56px;padding-bottom:var(--dock)}
+#dock2{position:fixed;left:0;right:0;bottom:0;height:56px;z-index:38;display:none;flex-direction:row;align-items:center;justify-content:center;gap:6px;padding:0 12px;background:rgba(var(--bar),.92);border-top:1px solid var(--line);overflow:auto hidden;scrollbar-width:none;-webkit-app-region:no-drag}
+body.dockon #dock2{display:flex}
+.dapp{position:relative;width:42px;height:42px;flex:none;border:0;border-radius:8px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s,transform .12s}
+.dapp:hover{background:rgba(var(--ink),.12);transform:scale(1.06)}
+.dapp:active{transform:scale(.94)}
+.dapp img{width:30px;height:30px;display:block;pointer-events:none}
+.dapp .dl{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font:700 15px "Segoe UI",system-ui,sans-serif;color:#fff;pointer-events:none}
+.dapp .dl.dterm{background:#0c0c0c;border:1px solid var(--line2);color:var(--hi);font:700 13px var(--fixed);letter-spacing:-.5px}
+.dapp.went::after{content:"";position:absolute;left:13px;right:13px;bottom:-5px;height:3px;border-radius:2px;background:var(--pfiles)}
+#dock2 .dsep{width:1px;height:26px;background:var(--line2);flex:none;margin:0 2px}
+#dock2 .dstart{color:var(--pfiles)}
+#dock2 .dstart svg{width:28px;height:28px}
+.arow .ago.on{color:var(--a1);border-color:var(--a1)}
+#dock2 .dgrow{flex:1}
+#apick{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--dock) + 10px);z-index:62;width:340px;max-height:70vh;display:none;flex-direction:column;background:var(--solid);border:1px solid var(--line2);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,var(--sh));font-family:"Segoe UI",system-ui,sans-serif;font-size:14px}
+#apick.on{display:flex}
+#apick input{margin:12px;border:1px solid var(--line2);background:rgba(var(--ink),.05);color:var(--fg);border-radius:5px;padding:9px 11px;font:inherit;outline:none}
+#apick input:focus{border-color:var(--a1)}
+#alist{overflow:auto;padding:0 6px 8px}
+.arow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:5px;cursor:pointer;color:var(--fg)}
+.arow:hover{background:rgba(var(--ink),.08)}
+.arow .an{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arow .ap{color:var(--a1);font-size:12.5px;flex:none}
+.arow .ago{border:1px solid var(--line2);background:none;color:var(--mid);font:inherit;font-size:12px;border-radius:4px;padding:2px 9px;cursor:pointer;flex:none}
+.arow .ago:hover{border-color:var(--a1);color:var(--fg)}
+#apick .ah{padding:0 16px 10px;color:var(--dim);font-size:12.5px}
+#top{zoom:1.25;gap:18px;padding-right:124px}
+#results{zoom:.8}
+body.full #top{padding-right:12px}
+body.dockon #board,body.dockon #term{bottom:calc(30px + var(--dock))}
+body.dockon #tbtn,body.dockon #ver{bottom:var(--dock)}
+body.dockon #toast{bottom:calc(46px + var(--dock))}
+.res .rapp{width:38px;text-align:center;flex:none;color:var(--pfiles);font-size:11px;font-weight:700}
 /* ---------- terminal drawer: slides up over the bottom of the window ---------- */
 #term{position:fixed;left:0;right:0;bottom:30px;height:min(42vh,340px);z-index:45;display:none;flex-direction:column;background:var(--code);border-top:2px solid var(--line2);box-shadow:0 -10px 30px rgba(0,0,0,var(--sh))}
 body.termopen #term{display:flex}
@@ -608,12 +669,12 @@ body.termbusy #tbtn{color:var(--a1)}
 .prebar button:hover{color:var(--fg);border-color:var(--a1)}
 #ver{position:fixed;right:0;bottom:0;height:30px;line-height:30px;padding:0 12px 0 22px;font-size:10.5px;letter-spacing:.06em;color:color-mix(in srgb,var(--dim) 70%,transparent);background:linear-gradient(90deg,transparent,var(--bg) 16px);z-index:35;cursor:default;user-select:none}
 #ver:hover{color:var(--mid)}
-#keys{padding-right:74px}
+#keys{padding-right:190px}
 #keys .bk{display:none}
 body[data-board="1"] #keys>span:not(.r):not(.bk){display:none}
 body[data-board="1"] #keys>span.bk:not(.r){display:inline}
 /* ---------- each pane has its own colour ----------
-   Files keeps the theme's accent. Git and Claude each get their own, used for everything that is
+   Files keeps the theme's accent. Git and Klaus each get their own, used for everything that is
    accented inside that pane and for its switch at the top, so three panes side by side read as
    three things at a glance. Settings can turn it off. */
 :root{--pfiles:var(--a1);--pgit:#9aab84;--pgitc:154,171,132;--pcl:#cc8450;--pclc:204,132,80}
@@ -641,25 +702,26 @@ body[data-tint="1"] #main>*{padding-top:14px}
   <span id="brandlogo"></span><span class="brand">LOOM</span>
   <button class="cbtn" id="rootbtn"></button>
   <div id="crumbs"></div>
-  <div class="searchwrap"><input id="q" placeholder="find any folder or file" autocomplete="off" spellcheck="false"><div id="results"></div></div>
+  <div class="searchwrap"><input id="q" placeholder="find a file, folder or app" autocomplete="off" spellcheck="false"><div id="results"></div></div>
   <button class="cbtn" id="bbtn" title="The board: sticky notes and a jump into any project. Ctrl+B."><svg class="ic" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5" height="5"/><rect x="9" y="2" width="5" height="5"/><rect x="2" y="9" width="5" height="5"/><rect x="9" y="9" width="5" height="5"/></svg><span class="lb">board</span></button>
-  <span class="seg" id="viewseg" title="Click for that pane on its own. Right click to add or remove a pane beside the others. Ctrl+G is git, Ctrl+J is Claude."><button data-v="files">files</button><button data-v="git">git</button><button data-v="claude">claude</button></span>
+  <span class="seg" id="viewseg" title="Click for that pane on its own. Right click to add or remove a pane beside the others. Ctrl+G is git, Ctrl+J is Klaus."><button data-v="files">files</button><button data-v="git">git</button><button data-v="claude">klaus</button></span>
   <span class="tools"><button class="tbtn" id="hsync" title="Write down what happened since the last sync and send it to your private sync repository, so Claude on your phone can pick up where you left off."><svg class="ic" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6.5A5.5 5.5 0 0 0 3.2 5"/><path d="M3 2v3.2h3.2"/><path d="M3 9.5A5.5 5.5 0 0 0 12.8 11"/><path d="M13 14v-3.2H9.8"/></svg><span class="lb">sync</span></button>
   <button class="tbtn" id="gphone" title="Work in this root folder from your phone, through the Code tab of the Claude app."><svg class="ic" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="1.5" width="7" height="13" rx="1.5"/><path d="M7 12.2h2"/></svg><span class="lb">phone</span></button></span>
   <button class="gear" id="gset" title="Settings: account, theme, layout and root folder" aria-label="Settings"><svg class="ic" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"/></svg></button>
   <span id="clock"></span>
 </div>
+<div id="dock2"></div><div id="apick"><input id="aq" placeholder="find an app" spellcheck="false" autocomplete="off"><div class="ah">Click an app to open it. "pin" keeps it on the dock.</div><div id="alist"></div></div>
 <div id="notices"></div>
 <div id="main">
 <div id="stage">
   <div id="cols"></div>
   <svg id="wires"></svg>
-  <div id="hotclear" style="display:none"><span id="hotlabel"></span><button id="hotgo" title="Jump to the new save nearest the root folder. Click again for the next one.">take me there</button><button id="hotx" title="Stop the pulsing for everything Claude saved. Esc does the same. Right click a pulsing folder to clear just that one.">clear</button></div>
+  <div id="hotclear" style="display:none"><span id="hotlabel"></span><button id="hotgo" title="Jump to the new save nearest the root folder. Click again for the next one.">take me there</button><button id="hotx" title="Stop the pulsing for everything Klaus saved. Esc does the same. Right click a pulsing folder to clear just that one.">clear</button></div>
 </div>
 <aside id="claude"><div class="grip" data-p="claude" title="Drag to resize. Double click to reset."></div><div class="cin">
   <div class="chead">
-    <span id="clogo"></span><span class="ctitle">Claude</span><span id="cstate"></span>
-    <button class="cbtn" id="cvoice" title="Read Claude's replies out loud. Click again to stop."></button><button class="cbtn" id="cmodel"></button><button class="cbtn" id="ceffort"></button>
+    <span id="clogo"></span><span class="ctitle">Klaus</span><span id="cstate"></span>
+    <button class="cbtn" id="cvoice" title="Read Klaus's replies out loud. Click again to stop."></button><button class="cbtn" id="cmodel"></button><button class="cbtn" id="ceffort"></button>
     <span class="seg" id="cmode"><button data-m="look">look</button><button data-m="edit">edit</button><button data-m="auto">auto</button></span>
   </div>
   <div id="cusage"></div>
@@ -669,7 +731,7 @@ body[data-tint="1"] #main>*{padding-top:14px}
     <div class="cchat">
       <div id="cmsgs"></div>
       <div id="cctx"></div>
-      <div class="cinput"><textarea id="cin" rows="2" placeholder="ask claude about this folder or these files" spellcheck="false"></textarea><button id="cmic" title="Talk instead of typing. Opens Windows voice typing in this box (same as Windows key + H). Stays on until you click it again."><svg class="ic" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.6" y="1.5" width="4.8" height="8" rx="2.4"/><path d="M3.2 7.6a4.8 4.8 0 0 0 9.6 0M8 12.4v2.1M5.6 14.5h4.8"/></svg><span class="lb">mic</span></button><button id="csend">send</button></div>
+      <div class="cinput"><textarea id="cin" rows="2" placeholder="ask klaus about this folder or these files" spellcheck="false"></textarea><button id="cmic" title="Talk instead of typing. Opens Windows voice typing in this box (same as Windows key + H). Stays on until you click it again."><svg class="ic" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.6" y="1.5" width="4.8" height="8" rx="2.4"/><path d="M3.2 7.6a4.8 4.8 0 0 0 9.6 0M8 12.4v2.1M5.6 14.5h4.8"/></svg><span class="lb">mic</span></button><button id="csend">send</button></div>
     </div>
   </div>
 </div></aside>
@@ -711,9 +773,9 @@ body[data-tint="1"] #main>*{padding-top:14px}
   </div>
   <div class="bbody">
     <div id="bproj"></div>
-    <div id="bwrap"><div id="bcanvas"></div></div>
+    <div id="bwrap"><div id="bcanvas"></div></div><div id="bmarq"></div>
   </div>
-  <div id="micbar"><span class="mdot"></span><span id="micwords">listening</span><button class="btn pri" id="micsend">send to Claude</button><button class="btn" id="micoff">mic off</button></div>
+  <div id="micbar"><span class="mdot"></span><span id="micwords">listening</span><button class="btn pri" id="micsend">send to Klaus</button><button class="btn" id="micoff">mic off</button></div>
 </section>
 <div id="tagpick"></div><div id="colpick"></div>
 <div id="keys">
@@ -721,7 +783,7 @@ body[data-tint="1"] #main>*{padding-top:14px}
   <span><kbd>shift</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd>select more</span><span><kbd>space</kbd>add / remove</span>
   <span><kbd>c</kbd>to usb</span><span><kbd>ctrl</kbd><kbd>c</kbd><kbd>x</kbd><kbd>v</kbd>copy cut paste</span><span><kbd>del</kbd>delete</span><span><kbd>f2</kbd>rename</span>
   <span><kbd>ctrl</kbd><kbd>shift</kbd><kbd>n</kbd>new folder</span><span><kbd>s</kbd>sort</span><span><kbd>p</kbd>print</span><span><kbd>m</kbd>menu</span>
-  <span><kbd>ctrl</kbd><kbd>tab</kbd>next pane</span><span><kbd>ctrl</kbd><kbd>\</kbd>files + claude</span><span><kbd>ctrl</kbd><kbd>n</kbd>new chat</span><span><kbd>u</kbd>usb</span><span><kbd>h</kbd>home</span><span><kbd>ctrl</kbd><kbd>f</kbd>find</span><span><kbd>ctrl</kbd><kbd>g</kbd>git</span>
+  <span><kbd>ctrl</kbd><kbd>tab</kbd>next pane</span><span><kbd>ctrl</kbd><kbd>\</kbd>files + klaus</span><span><kbd>ctrl</kbd><kbd>n</kbd>new chat</span><span><kbd>u</kbd>usb</span><span><kbd>h</kbd>home</span><span><kbd>ctrl</kbd><kbd>f</kbd>find</span><span><kbd>ctrl</kbd><kbd>g</kbd>git</span>
   <span class="gk"><kbd>&uarr;</kbd><kbd>&darr;</kbd>move</span><span class="gk"><kbd>space</kbd>tick / untick</span><span class="gk"><kbd>ctrl</kbd><kbd>enter</kbd>commit</span><span class="gk"><kbd>ctrl</kbd><kbd>g</kbd>hide git</span><span class="gk"><kbd>ctrl</kbd><kbd>tab</kbd>next pane</span><span class="gk"><kbd>right click</kbd>discard, copy path</span>
   <span class="bk"><kbd>double click</kbd>new note</span><span class="bk"><kbd>n</kbd>new note</span><span class="bk"><kbd>/</kbd>tag a folder</span><span class="bk"><kbd>click a tag</kbd>jump in</span><span class="bk"><kbd>ctrl</kbd><kbd>z</kbd>bring back a removed note</span><span class="bk"><kbd>esc</kbd>go to workspace</span><span class="bk"><kbd>ctrl</kbd><kbd>b</kbd>board</span>
   <span class="r" id="status"></span>
@@ -1459,6 +1521,14 @@ async function printFiles(files){
 let menuByKeys = false;
 document.addEventListener('contextmenu', ev => {
   ev.preventDefault();
+  if (ev.target.closest('#dstart')) return menu(ev.clientX, ev.clientY - 60, [{label: 'Open the Windows Start menu', run: () => call('startMenu').catch(fail)}]);
+  const dk = ev.target.closest('#dock2 .dapp[data-app]');
+  if (dk){
+    const i = S.dock.findIndex(p => p.id === dk.dataset.app), app = S.dock[i]; if (!app) return;
+    const move = d => { const j = i + d; if (j < 0 || j >= S.dock.length) return; [S.dock[i], S.dock[j]] = [S.dock[j], S.dock[i]]; saveAll(); drawAppDock(); };
+    return menu(ev.clientX, ev.clientY, [{head: app.name}, {label: 'Open', strong: true, run: () => appStart(app)}, '-', {label: 'Move left', run: () => move(-1)}, {label: 'Move right', run: () => move(1)}, '-', {label: 'Unpin from dock', run: () => { S.dock.splice(i, 1); saveAll(); drawAppDock(); }}]);
+  }
+  if (ev.target.closest('#dock2, #apick')) return;
   const words = String(getSelection()).trim();
   if (words && ev.target.closest('#cmsgs, #termout, #gdiff, .pv, .dlg')){ return menu(ev.clientX, ev.clientY, [{label: 'Copy', strong: true, run: () => copyText(words)}, ...(ev.target.closest('#cmsgs') ? [{label: 'Put in terminal', run: () => termPut(words)}] : [])]); }
   const cmEl = ev.target.closest('#cmsgs .cm.ai, #cmsgs .cm.user');
@@ -1482,6 +1552,7 @@ document.addEventListener('contextmenu', ev => {
     const items = [{head: one ? files[0].name : plural(files.length, 'file') + ' selected'}];
     if (one) items.push({label: 'Open', strong: true, run: () => call('open', {path: paths[0]}).catch(fail)});
     if (one) items.push({label: 'Show in File Explorer', run: () => call('reveal', {path: paths[0]}).catch(fail)});
+    if (one) items.push({label: 'Open in VS Code', run: () => call('openCode', {path: paths[0]}).catch(fail)});
     if (paths.some(isHot)) items.splice(1, 0, {label: 'Dismiss the pulse', run: () => paths.forEach(clearHot)});
     items.push('-', {label: 'Cut    ctrl+x', run: () => clipPaths(paths, true)}, {label: 'Copy    ctrl+c', run: () => clipPaths(paths, false)});
     if (clip.paths.length) items.push({label: 'Paste here    ctrl+v', run: () => paste()});
@@ -1497,7 +1568,7 @@ document.addEventListener('contextmenu', ev => {
   const dirPath = (node && !node.classList.contains('skip') && node.dataset.path) || (drop && drop.dataset.drop);
   if (dirPath){
     const name = dirPath.replace(/\\$/, '').split('\\').pop();
-    const items = [{head: name}, {label: 'Open', strong: true, run: () => go(dirPath)},
+    const items = [{head: name}, {label: 'Open', strong: true, run: () => go(dirPath)}, {label: 'Open in VS Code', run: () => call('openCode', {path: dirPath}).catch(fail)},
       {label: 'Open in File Explorer', run: () => call('reveal', {path: dirPath}).catch(fail)}];
     if (isHot(dirPath)){ const n = hotUnder(dirPath).length; items.splice(1, 0, {label: n > 1 ? 'Take me to the nearest of ' + n + ' new saves' : 'Take me to the new save', strong: true, run: () => goHot(dirPath)}, {label: n > 1 ? 'Dismiss these ' + n : 'Dismiss', run: () => clearHot(dirPath)}, '-'); }
     if (!drop) items.push('-', {label: 'Cut', run: () => clipPaths([dirPath], true)}, {label: 'Copy', run: () => clipPaths([dirPath], false)});
@@ -1516,6 +1587,7 @@ document.addEventListener('contextmenu', ev => {
     if (clip.paths.length) items.push({label: 'Paste ' + plural(clip.paths.length, 'item') + ' here' + (here === cur ? '    ctrl+v' : ''), strong: true, run: () => paste(here.path)});
     items.push({label: 'New folder' + (here === cur ? '    ctrl+shift+n' : ''), run: () => newFolder(here.path)}, '-',
       {label: 'Open in File Explorer', run: () => call('reveal', {path: here.path}).catch(fail)},
+      {label: 'Open this folder in VS Code', run: () => call('openCode', {path: here.path}).catch(fail)},
       {label: 'Copy path', run: () => copyPath(here.path)}, {label: 'Properties', run: () => showProps([here.path])}, '-', {label: 'Refresh    f5', run: refresh});
     if (touched.size) items.push({label: 'Stop all pulses    esc', run: () => clearHot()});
     return menu(ev.clientX, ev.clientY, items);
@@ -1533,6 +1605,7 @@ function drawResults(note){
   found.forEach((r, i) => {
     const d = el('div', 'res' + (i === act ? ' act' : ''));
     if (r.dir){ const w = el('span'); w.style.cssText = 'width:38px;text-align:center;flex:none'; w.innerHTML = ICON.folder; d.append(w); }
+    else if (r.app) d.append(el('span', 'rapp', 'APP'));
     else d.append(el('span', 'ext ' + (KIND[r.name.split('.').pop().toLowerCase()] || ''), (r.name.includes('.') ? r.name.split('.').pop() : 'file').slice(0, 4)));
     d.append(el('span', 'rn', r.name), el('span', 'rw', r.where));
     d.title = r.path;
@@ -1542,6 +1615,7 @@ function drawResults(note){
   box.classList.add('on');
 }
 function pickResult(r){
+  if (r.app){ $('results').classList.remove('on'); $('q').value = ''; $('q').blur(); return appStart(r.app); }
   if (boardOpen()) closeBoard();
   $('results').classList.remove('on'); $('q').value = ''; $('q').blur();
   if (r.dir) go(r.path); else go(r.folder, {select: r.path});
@@ -1552,8 +1626,11 @@ $('q').addEventListener('input', () => {
     const q = $('q').value.trim();
     if (q.length < 2){ $('results').classList.remove('on'); return; }
     try {
-      const r = await call('search', {q}); found = r.results; act = 0;
-      drawResults(!r.ready ? 'Still reading the workspace. Try again in a few seconds.' : (!found.length ? 'Nothing matches.' : (r.total > found.length ? 'Showing the first ' + found.length + ' of ' + r.total.toLocaleString() + '. Type more to narrow it.' : '')));
+      const r = await call('search', {q});
+      const ql = q.toLowerCase(), hitApps = A.apps.filter(x => x.name.toLowerCase().includes(ql)).sort((x, y) => (y.name.toLowerCase().startsWith(ql) - x.name.toLowerCase().startsWith(ql)) || x.name.length - y.name.length).slice(0, 4)
+        .map(x => ({app: x, name: x.name, where: 'open this app', path: x.name}));
+      found = [...hitApps, ...r.results]; act = 0;
+      drawResults(hitApps.length && !r.results.length ? '' : !r.ready ? 'Still reading the workspace. Try again in a few seconds.' : (!found.length ? 'Nothing matches.' : (r.total > found.length ? 'Showing the first ' + found.length + ' of ' + r.total.toLocaleString() + '. Type more to narrow it.' : '')));
     } catch (e) { fail(e); }
   }, 130);
 });
@@ -1620,8 +1697,10 @@ function kbMenu(){
 document.addEventListener('keydown', ev => {
   const k = ev.key, low = k.toLowerCase();
   if (ev.ctrlKey && low === 'c' && String(getSelection()).trim()) return;      // words are selected: let Windows copy them
-  if ($('setv').classList.contains('on')){ if (k === 'Escape'){ ev.preventDefault(); closeSettings(); } return; }
+  if ($('setv').classList.contains('on') && !$('veil').classList.contains('on')){ if (k === 'Escape'){ ev.preventDefault(); closeSettings(); } return; }
   if (ev.ctrlKey && k === '`'){ ev.preventDefault(); termToggle(); return; }
+  if (k === 'F11'){ ev.preventDefault(); setFull(!S.full); return; }
+  if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && /^[123]$/.test(k)){ ev.preventDefault(); if (boardOpen()) closeBoard(); soloPane(PANES[+k - 1]); return; }
   if ($('veil').classList.contains('on')){          // a question is open: it takes the keys
     const bs = [...document.querySelectorAll('#dlg .btn')], i = bs.indexOf(document.activeElement);
     const typing = document.activeElement && document.activeElement.tagName === 'INPUT';
@@ -1639,6 +1718,8 @@ document.addEventListener('keydown', ev => {
   const mode = ev.shiftKey ? 'extend' : (ev.ctrlKey ? 'keep' : undefined);
   if (boardOpen()){ boardKey(ev); return; }                 // the board has the keyboard
   if (appKey(ev)) return;
+  // Esc is the way home: from files, git or Klaus it goes back to the board (after first letting go of a selection or the pulses).
+  if (k === 'Escape' && !/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '') && !(shown('files') && KF !== 'git' && (sel.size || touched.size))){ ev.preventDefault(); openBoard(); return; }
   if (KF === 'git' && shown('git')){ gitKey(ev); return; }   // the git pane has the keyboard
   if (!shown('files')) return;                              // file keys (delete, cut, paste) must not act on a hidden file list
   if (!cur) return;
@@ -1681,11 +1762,12 @@ document.addEventListener('mouseup', ev => {            // mouse back button
   if (ev.button === 3){ ev.preventDefault(); const p = back.pop(); if (p) go(p, {noHistory: true}); }
 });
 
-// ---------- Claude ----------
+// ---------- Klaus ----------
 // Runs the Claude Code already on this PC. It always knows the open folder and the selection.
 const SPARK = '<svg class="spark" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 2.5v19M2.5 12h19M5.3 5.3l13.4 13.4M18.7 5.3 5.3 18.7M8.2 3.4l7.6 17.2M15.8 3.4 8.2 20.6"/></g></svg>';
 // The little Claude Code critter, drawn as pixels.
-const CRITTER = '<svg class="critter" viewBox="0 0 14 10" shape-rendering="crispEdges"><g fill="currentColor"><rect x="2" y="1" width="10" height="6"/><rect x="0" y="3" width="2" height="2"/><rect x="12" y="3" width="2" height="2"/><rect x="3" y="7" width="1" height="2"/><rect x="5" y="7" width="1" height="2"/><rect x="8" y="7" width="1" height="2"/><rect x="10" y="7" width="1" height="2"/></g><rect x="4" y="3" width="1" height="2" fill="#141312"/><rect x="9" y="3" width="1" height="2" fill="#141312"/></svg>';
+// Klaus: a small armadillo, drawn in one line weight and one colour so it reads as a mark, not a cartoon.
+const CRITTER = '<svg class="critter" viewBox="0 0 28 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14C6 6.5 10 3.5 14.5 3.5S22.5 6.5 22.5 14H6"/><path d="M10.6 4.9V14M14.5 3.5V14M18.4 4.9V14"/><path d="M6 10.4C4 10 2.2 11.2 1.2 13.3C3 14 4.8 14 6 14"/><path d="M5.7 10.3L5.1 7.6L7.2 9"/><path d="M22.5 12.4C24.6 12.7 26 13.6 27 15.2"/><path d="M9.3 14V16.2M19.2 14V16.2"/><circle cx="3.9" cy="12.3" r=".55" fill="currentColor" stroke="none"/></svg>';
 const MODE_HINT = {look: 'look: reads and answers, changes nothing', edit: 'edit: can create and change files in the root folder',
   auto: 'auto: can also run commands it judges safe'};
 const MODELS = [['', 'default'], ['fable', 'Fable'], ['opus', 'Opus'], ['sonnet', 'Sonnet'], ['haiku', 'Haiku']];
@@ -1749,7 +1831,7 @@ function chatHistory(c, upTo){
   const lines = [];
   for (const m of c.msgs.slice(0, upTo).slice(-40)){
     if (m.role === 'user') lines.push((m.by || 'User') + ': ' + m.text);
-    else if (m.role === 'ai'){ const t = m.parts.filter(p => p.k === 'text').map(p => p.text).join('\n').trim(); if (t) lines.push('Claude: ' + t); }
+    else if (m.role === 'ai'){ const t = m.parts.filter(p => p.k === 'text').map(p => p.text).join('\n').trim(); if (t) lines.push('Klaus: ' + t); }
   }
   return lines.join('\n\n').slice(-30000);
 }
@@ -1795,7 +1877,7 @@ function cDraw(){
   if (!c || !c.msgs.length){
     const e = el('div', 'cempty');
     e.innerHTML = CRITTER + '<div class="ehi">What are we working on?</div>' +
-      '<div class="esub">Claude sees the folder you have open and the files you have selected.<br>Chats are shared with everyone who uses this root folder.</div>';
+      '<div class="esub">Klaus sees the folder you have open and the files you have selected.<br>Chats are shared with everyone who uses this root folder.</div>';
     const tries = [['what is in this folder?', 'look'], ['explain what the selected files do', 'look'], ['compare the selected files', 'look'], ['tidy up the names in this folder', 'edit']];
     for (const [t, m] of tries){ const b = el('button', 'etry', t); if (m !== 'look') b.append(el('span', '', ' needs ' + m)); b.onclick = () => { $('cin').value = t; $('cin').focus(); }; e.append(b); }
     box.append(e);
@@ -1820,7 +1902,7 @@ function drawChats(){
     const x = el('button', 'cdel', '×'); x.title = 'Delete this chat';
     x.onclick = async ev => {
       ev.stopPropagation();
-      if (running(c)) return toast('Claude is still working in that chat.');
+      if (running(c)) return toast('Klaus is still working in that chat.');
       if (c.msgs.length && !(await ask('Delete this chat for everyone who uses this root folder?', [c.title], [['Cancel', null], ['Delete', true, true]]))) return;
       chats = chats.filter(z => z !== c); if (c._m) call('chatDelete', {id: c.id}).catch(fail);
       if (S.chatId === c.id) S.chatId = null; ensureChat(); saveAll(); drawChats(); cDraw();
@@ -1878,15 +1960,15 @@ function cCtx(){
 }
 function cNote(c, text, bad){ c.msgs.push({role: 'note', text, bad: !!bad}); }
 
-// ---------- panes: files, git and Claude. Any mix of them sits side by side. ----------
+// ---------- panes: files, git and Klaus. Any mix of them sits side by side. ----------
 const PANES = ['files', 'git', 'claude'];
 // Whose turn it is. Each entry is a short reason, shown as the switch's tooltip while it pulses.
-// files: Claude saved something. git: changes to commit or commits to push. claude: a reply is waiting.
+// files: Klaus saved something. git: changes to commit or commits to push. claude: a reply is waiting.
 const TURN = {files: '', git: '', claude: '', gitRepo: null, gitSig: '', gitOff: ''};
 const TURN_TIP = {};
 function paintTurn(){
   let unseen = 0; try { unseen = [...touched.values()].filter(t => !t.seen).length; } catch (e) { /* still starting up */ }
-  TURN.files = unseen ? 'Claude saved ' + plural(unseen, 'file') + '. Click to see where.' : '';
+  TURN.files = unseen ? 'Klaus saved ' + plural(unseen, 'file') + '. Click to see where.' : '';
   for (const btn of $('viewseg').children){
     const p = btn.dataset.v;
     if (shown(p) && !boardOpen() && p === 'claude') TURN[p] = '';      // reading the reply now: nothing is waiting any more
@@ -1897,7 +1979,7 @@ function paintTurn(){
   }
   paintNotices();
 }
-// After Claude has been busy: is anything now waiting in git? Checks the repositories that hold what
+// After Klaus has been busy: is anything now waiting in git? Checks the repositories that hold what
 // it saved (or the open folder), without needing the git pane on screen.
 async function gitTurn(paths){
   try {
@@ -1916,17 +1998,30 @@ async function gitTurn(paths){
     }
   } catch (e) { /* git not there, or busy: no light */ }
 }
+// A new build was dropped in next to the app. Loom restarts itself to pick it up, but never in the
+// middle of a reply from Klaus or a running command.
+const UPD = {ready: false, going: false};
+async function updApply(force){
+  if (!UPD.ready || UPD.going) return;
+  if (!force && (C.busy || T.busy)) return;
+  UPD.going = true; flushBoard(); saveAll();
+  toast('Updating Loom. It will close and open again.');
+  setTimeout(async () => { const r = await fm.update.apply(); if (r && r.error){ UPD.going = false; UPD.ready = false; paintTurn(); toast(r.error, true); } }, 900);
+}
+if (fm.update) fm.update.onReady(() => { UPD.ready = true; paintTurn(); updApply(); });
+setInterval(() => updApply(), 5000);
 function gitDismiss(){ TURN.gitOff = TURN.gitSig; TURN.git = ''; TURN.repo = null; paintTurn(); }
 // What is waiting for you, as a strip right under the top bar: new saves and git. Each line has its
 // own way in and its own dismiss, and nothing goes away just because a pane was opened and closed.
 function paintNotices(){
   const box = $('notices'); if (!box) return;
   let saves = [], waiting = 0; try { saves = [...touched.values()]; waiting = saves.filter(t => !t.seen).length; } catch (e) { /* still starting up */ }
-  const key = [saves.length, waiting, TURN.git].join('|');
+  const key = [saves.length, waiting, TURN.git, UPD.ready].join('|');
   if (box.dataset.k === key) return; box.dataset.k = key;
   box.textContent = '';
   const line = (cls, text, acts) => { const d = el('div', 'nt ' + cls); d.append(el('span', 'ndot'), el('span', 'ntx', text), el('span', 'sp')); for (const [name, fn, pri] of acts){ const b = el('button', pri ? 'pri' : '', name); b.onclick = fn; d.append(b); } box.append(d); };
-  if (saves.length) line('nfiles', waiting ? 'Claude saved ' + plural(waiting, 'file') + '.' : 'You found the saved files. They stop pulsing shortly.',
+  if (UPD.ready) line('nupd', 'A Loom update is ready. It installs by itself as soon as Klaus and the terminal are idle.', [['restart now', () => updApply(true), true]]);
+  if (saves.length) line('nfiles', waiting ? 'Klaus saved ' + plural(waiting, 'file') + '.' : 'You found the saved files. They stop pulsing shortly.',
     [...(waiting ? [['take me there', () => goHot(null), true]] : []), ['dismiss', () => clearHot()]]);
   if (TURN.git) line('ngit', TURN.git, [['open git', () => { TURN.repo = TURN.gitRepo; showPane('git'); if (boardOpen()) closeBoard(); if (shown('git') && G.repos && TURN.repo){ const r = TURN.repo; TURN.repo = null; gitPickRepo(r); } }, true], ['dismiss', gitDismiss]]);
   const has = box.children.length > 0, had = document.body.classList.contains('hasnote');
@@ -1950,7 +2045,7 @@ function applyPanes(){
   if (!shown(KF)) KF = shown('files') ? 'files' : 'git';
   b.dataset.kf = shown(KF) ? KF : '';
   $('dock').classList.toggle('has', drives.length > 0);
-  // One pane stretches (files when it is up, otherwise git, otherwise Claude). The others keep the
+  // One pane stretches (files when it is up, otherwise git, otherwise Klaus). The others keep the
   // width they were dragged to. Everything is set here, on the elements, so nothing else can override it.
   const flexP = stretchPane();
   const fixed = order.filter(p => p !== flexP);
@@ -1989,19 +2084,23 @@ function togglePane(p){
 function showPane(p){ if (!shown(p)) setPanes({...S.panes, [p]: true}); }
 // The old single names, still used by the build self check.
 function setView(v){ setPanes({files: v === 'files' || v === 'split', claude: v === 'claude' || v === 'split', git: v === 'git'}); }
-// Ctrl+Tab: move the keyboard to the next pane that is up: files, git, Claude, and round again.
+// Ctrl+Tab: move the keyboard to the next pane that is up: files, git, Klaus, and round again.
 function switchPane(){
+  if (PANES.filter(shown).length === 1){ const now = PANES.find(shown); if (now === 'claude') $('cin').blur(); return soloPane(PANES[(PANES.indexOf(now) + 1) % PANES.length]); }
   const inClaude = document.activeElement === $('cin');
   if (!shown('claude')){
     if (shown('files') && shown('git')){ KF = KF === 'files' ? 'git' : 'files'; applyPanes(); return; }
     showPane('claude'); $('cin').focus(); return;
   }
-  if (PANES.filter(shown).length === 1){ showPane('files'); KF = 'files'; applyPanes(); $('cin').blur(); return; }
+  if (PANES.filter(shown).length === 1){ const now = PANES.find(shown); return soloPane(PANES[(PANES.indexOf(now) + 1) % PANES.length]); }
   if (inClaude){ $('cin').blur(); KF = shown('files') ? 'files' : 'git'; applyPanes(); }
   else if (KF === 'files' && shown('files') && shown('git')){ KF = 'git'; applyPanes(); }
   else $('cin').focus();
 }
 function toClaude(){ showPane('claude'); $('cin').focus(); }
+// The Copilot key: from anywhere in Windows, Loom comes forward with the cursor in Klaus's box.
+if (fm.onSummon) fm.onSummon(() => { if ($('setv').classList.contains('on')) closeSettings(); if (boardOpen()) closeBoard(); closeMenu(); toClaude(); });
+setTimeout(() => { if (S.klausKey !== false) call('klausKey', {set: true}).catch(() => {}); }, 1200);
 document.addEventListener('mousedown', ev => {
   const to = ev.target.closest('#git') ? 'git' : ev.target.closest('#stage, #dock') ? 'files' : null;
   if (to && to !== KF && !ev.target.closest('.grip')){ KF = to; document.body.dataset.kf = KF; }
@@ -2035,8 +2134,8 @@ for (const g of document.querySelectorAll('.grip')){
   g.addEventListener('dblclick', () => { delete S.w[document.body.dataset.combo + ':' + p]; applyPanes(); alignCols(); drawWires(); saveAll(); });
 }
 
-// ---------- where Claude saved ----------
-// Each file Claude writes is remembered for a while. Every folder on the way to it pulses in the
+// ---------- where Klaus saved ----------
+// Each file Klaus writes is remembered for a while. Every folder on the way to it pulses in the
 // columns, the wire to it pulses, and the file itself pulses once its folder is open.
 const touched = new Map();                 // lower case path -> {path, at, seen}
 const winPath = p => String(p || '').replace(/\//g, '\\').replace(/\\+$/, '');
@@ -2085,7 +2184,7 @@ async function reveal(p){
   touch(p);
 }
 
-// Keys that work everywhere, even while typing to Claude. Returns true when it used the key.
+// Keys that work everywhere, even while typing to Klaus. Returns true when it used the key.
 function appKey(ev){
   const k = ev.key, low = k.toLowerCase();
   if (ev.ctrlKey && low === 'b'){ ev.preventDefault(); boardOpen() ? closeBoard() : openBoard(); return true; }
@@ -2108,9 +2207,9 @@ async function cStatus(){
 const COMP = {on: false, start: 0, sentAt: 0, wait: null};
 function cSend(byButton){
   if (running(chat())){
-    // Only a deliberate click on the stop button stops Claude. Enter, voice typing and a double click on send do not.
+    // Only a deliberate click on the stop button stops Klaus. Enter, voice typing and a double click on send do not.
     if (byButton === true && performance.now() - COMP.sentAt > 900) return cSendNow();
-    if (byButton !== true && $('cin').value.trim()) toast('Claude is still working. Your words stay in the box; send them when it is done, or click stop.');
+    if (byButton !== true && $('cin').value.trim()) toast('Klaus is still working. Your words stay in the box; send them when it is done, or click stop.');
     return;
   }
   if (!COMP.on) return cSendNow();
@@ -2157,7 +2256,7 @@ fm.claude.onEvent(ev => {
     if (ev.text) m.parts.push({k: 'text', text: ev.text});
     for (const p of m.parts) if (p.k === 'tool' && !p.state) p.state = 'err';
     const wrote = new Set(m.parts.filter(p => p.k === 'tool' && p.write && p.state === 'ok').map(p => winPath(p.path).toLowerCase())).size;
-    if (wrote) toast('Claude saved ' + plural(wrote, 'file') + '. ' + (shown('files') ? 'Follow the pulse in the folders, or click the line in the chat.' : 'Click the line in the chat to see where.'));
+    if (wrote) toast('Klaus saved ' + plural(wrote, 'file') + '. ' + (shown('files') ? 'Follow the pulse in the folders, or click the line in the chat.' : 'Click the line in the chat to see where.'));
     if (!m.parts.length) c.msgs.splice(c.msgs.indexOf(m), 1);
     if (ev.stopped) cNote(c, 'Stopped.');
     else if (ev.error) cNote(c, ev.error, true);
@@ -2165,13 +2264,105 @@ fm.claude.onEvent(ev => {
     c.at = Date.now();
     if (S.speak && !ev.stopped && !ev.error && c === chat()) speak(m.parts.filter(p => p.k === 'text').map(p => p.text).join('\n\n'));
     C.runs.delete(c.id); cBar(); if (c === chat()) cDraw(); drawChats(); saveAll(); saveChat(c);
-    if (c !== chat()) toast('Claude ' + (ev.error ? 'stopped with a problem' : 'has replied') + ' in "' + (c.title || 'New chat').slice(0, 40) + '".');
-    if (!shown('claude') || boardOpen()) TURN.claude = ev.error ? 'Claude stopped with a problem. Click to read it.' : 'Claude has replied. Your turn.';
+    if (c !== chat()) toast('Klaus ' + (ev.error ? 'stopped with a problem' : 'has replied') + ' in "' + (c.title || 'New chat').slice(0, 40) + '".');
+    if (!shown('claude') || boardOpen()) TURN.claude = ev.error ? 'Klaus stopped with a problem. Click to read it.' : 'Klaus has replied. Your turn.';
+    if (run.ranTool) setTimeout(boardDoneCheck, 600);       // Klaus may have added notes or marked some as finished
     if (run.ranTool){ cache.clear(); pollDrives(true); if (cur) go(cur.path, {noHistory: true}); if (shown('git')) gitRefresh();
-      gitTurn(m.parts.filter(p => p.k === 'tool' && p.write && p.path).map(p => p.path)); }   // Claude may have changed files
+      gitTurn(m.parts.filter(p => p.k === 'tool' && p.write && p.path).map(p => p.path)); }   // Klaus may have changed files
     paintTurn();
   }
 });
+
+// Full screen: Loom covers the whole display, Windows taskbar included. F11 switches it.
+function setFull(on){ S.full = !!on; saveAll(); call('fullScreen', {set: S.full}).catch(() => {}); document.body.classList.toggle('full', S.full); }
+setTimeout(() => { if (S.full) setFull(true); }, 600);
+
+// ---------- app dock ----------
+// The programs you would keep on the taskbar, along the bottom. Pinned apps are remembered on this PC.
+const A = {apps: [], icons: {}, ran: {}, wins: [], wicons: {}};
+// Which open window belongs to a pinned app, judged by name (Windows does not say). Good enough for a dot and a click.
+function winOf(app){
+  const n = app.name.toLowerCase(), flat = n.replace(/[^a-z0-9]/g, ''), first = n.split(/\s+/)[0];
+  return A.wins.find(w => { const p = w.proc.toLowerCase(); return p.length >= 3 && (flat.includes(p) || (first.length >= 4 && p.includes(first)) || w.title.toLowerCase().endsWith(n)); }) || null;
+}
+function winFace(w, into){ const u = A.wicons[w.path || w.proc]; if (u){ const i = el('img'); i.src = u; i.draggable = false; into.append(i); } else { const l = el('span', 'dl', w.proc.charAt(0).toUpperCase()); l.style.background = tileColor(w.proc); into.append(l); } }
+const DOCK_FIRST = ['Terminal', 'File Explorer', 'Discord', 'Firefox', 'Spotify', 'BlackWater', 'Klaus', 'Steam', 'Visual Studio Code'];
+const tileColor = name => 'hsl(' + ([...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 360, 7)) + ' 38% 42%)';
+function appFace(app, into){
+  if (/^file explorer$|^explorer$/i.test(app.name.trim())){ const w = el('span'); w.style.cssText = 'display:flex;pointer-events:none'; w.innerHTML = '<svg viewBox="2 5 28 23" width="36" height="30" style="pointer-events:none"><path d="M3 9.5A2.5 2.5 0 0 1 5.5 7h6.2l2.6 3H26.5A2.5 2.5 0 0 1 29 12.5V24a2.5 2.5 0 0 1-2.5 2.5h-21A2.5 2.5 0 0 1 3 24z" fill="color-mix(in srgb,var(--pfiles) 62%,#000)"/><rect x="7" y="9.5" width="12" height="9" rx="1.6" fill="var(--pgit)" transform="rotate(-7 13 14)"/><rect x="13.5" y="10.5" width="12" height="9" rx="1.6" fill="var(--pcl)" transform="rotate(6 19.5 15)"/><path d="M3 16.5A2.5 2.5 0 0 1 5.5 14h21a2.5 2.5 0 0 1 2.5 2.5V24a2.5 2.5 0 0 1-2.5 2.5h-21A2.5 2.5 0 0 1 3 24z" fill="var(--pfiles)"/></svg>'; into.append(w); return; }
+  if (/terminal|command prompt|powershell/i.test(app.name)){ const g = el('span', 'dl dterm', '>_'); into.append(g); return; }
+  const u = A.icons[app.id];
+  if (u){ const i = el('img'); i.src = u; i.draggable = false; into.append(i); }
+  else { const l = el('span', 'dl', app.name.replace(/^(microsoft|windows)\s+/i, '').charAt(0).toUpperCase()); l.style.background = tileColor(app.name); into.append(l); }
+}
+async function appStart(app){
+  try { await call('appLaunch', {id: app.id}); A.ran[app.id] = 1; drawAppDock(); toast('Opening ' + app.name + '.'); } catch (e) { fail(e); }
+}
+function drawAppDock(){
+  const d = $('dock2'); d.textContent = '';
+  document.body.classList.toggle('dockon', S.dockOn !== false);
+  const st = el('button', 'dapp dstart'); st.id = 'dstart'; st.title = 'All your apps. Click one to open it, or pin it to the dock. Right click for the Windows Start menu.'; st.innerHTML = LOOMMARK; st.onclick = ev => { ev.stopPropagation(); appPick(); }; d.append(st, el('div', 'dsep'));
+  const used = new Set();
+  for (const app of S.dock || []){
+    const open = winOf(app); if (open) used.add(open.pid);
+    const b = el('button', 'dapp' + (open ? ' went' : '')); b.title = open ? app.name + '  ·  open: ' + open.title : app.name; b.dataset.app = app.id; appFace(app, b);
+    b.onclick = ev => (open && !ev.shiftKey ? call('winFocus', {pid: open.pid}).catch(fail) : appStart(app));      // already open: bring it forward. Shift+click starts another.
+    d.append(b);
+  }
+  const rest = A.wins.filter(w => !used.has(w.pid));
+  if (rest.length) d.append(el('div', 'dsep'));
+  for (const w of rest){                                   // open, but not pinned: shown the way the taskbar shows it
+    const b = el('button', 'dapp went'); b.title = w.title + '  (' + w.proc + ')'; b.dataset.win = w.pid; winFace(w, b);
+    b.onclick = () => call('winFocus', {pid: w.pid}).catch(fail);
+    d.append(b);
+    const k = w.path || w.proc;
+    if (!(k in A.wicons)){ A.wicons[k] = null; call('winIcon', {pid: w.pid}).then(r => { if (r.dataUrl){ A.wicons[k] = r.dataUrl; drawAppDock(); } }).catch(() => {}); }
+  }
+}
+function appPick(){
+  const box = $('apick'); if (box.classList.contains('on')) return box.classList.remove('on');
+  box.classList.add('on'); $('aq').value = ''; drawAppList(); $('aq').focus();
+  call('appsList', {fresh: true}).then(r => { A.apps = r.apps; drawAppList(); }).catch(() => {});
+}
+function drawAppList(){
+  const q = $('aq').value.trim().toLowerCase(), list = $('alist'); list.textContent = '';
+  const rows = A.apps.filter(x => !q || x.name.toLowerCase().includes(q)).slice(0, 200);
+  if (!rows.length) list.append(el('div', 'ah', A.apps.length ? 'No app by that name.' : 'Reading the Start menu...'));
+  for (const app of rows){
+    const pinned = (S.dock || []).some(p => p.id === app.id), r = el('div', 'arow');
+    const pin = el('button', 'ago' + (pinned ? ' on' : ''), pinned ? 'unpin' : 'pin'); pin.onclick = ev => { ev.stopPropagation(); S.dock = pinned ? S.dock.filter(p => p.id !== app.id) : [...(S.dock || []), {id: app.id, name: app.name}]; saveAll(); loadIcons(); drawAppDock(); drawAppList(); };
+    r.append(el('span', 'an', app.name), pin);
+    r.onclick = () => { $('apick').classList.remove('on'); appStart(app); };
+    list.append(r);
+  }
+}
+async function loadIcons(){
+  for (const app of S.dock || []) if (!(app.id in A.icons)){
+    A.icons[app.id] = null;
+    try { const r = await call('appIcon', {id: app.id}); A.icons[app.id] = r.dataUrl || null; } catch (e) { /* letter tile */ }
+    drawAppDock();
+  }
+}
+async function dockInit(){
+  drawAppDock();
+  try { A.apps = (await call('appsList')).apps; } catch (e) { A.apps = []; }
+  if (!Array.isArray(S.dock) && A.apps.length){                 // first time: pin the usual suspects that are installed here
+    S.dock = [];
+    for (const want of DOCK_FIRST){
+      const w = want.toLowerCase(), hits = A.apps.filter(x => x.name.toLowerCase() === w || x.name.toLowerCase().includes(w)).sort((x, y) => x.name.length - y.name.length);
+      if (hits[0] && !S.dock.some(p => p.id === hits[0].id)) S.dock.push({id: hits[0].id, name: hits[0].name});
+    }
+    saveAll();
+  }
+  drawAppDock(); loadIcons();
+}
+$('aq').addEventListener('input', drawAppList);
+$('aq').addEventListener('keydown', ev => { if (ev.key === 'Enter'){ const first = $('alist').querySelector('.arow'); if (first) first.click(); } });
+$('apick').addEventListener('keydown', ev => { ev.stopPropagation(); if (ev.key === 'Escape') $('apick').classList.remove('on'); });
+document.addEventListener('mousedown', ev => { if (!ev.target.closest('#apick, #dock2')) $('apick').classList.remove('on'); });
+setTimeout(dockInit, 400);
+if (fm.apps) fm.apps.onWindows(list => { A.wins = list; drawAppDock(); });
+setTimeout(() => call('winList').then(r => { A.wins = r.wins || []; drawAppDock(); }).catch(() => {}), 900);
 
 // ---------- terminal drawer ----------
 const T = {cwd: null, busy: false, hist: [], hi: -1, chars: 0};
@@ -2231,26 +2422,28 @@ $('term').addEventListener('keydown', ev => {
   else if (ev.ctrlKey && ev.key.toLowerCase() === 'c' && !String(getSelection()).trim() && T.busy){ ev.preventDefault(); fm.term.stop(); }
 });
 
-// ---------- voice: Claude reads replies out loud, and the mic opens Windows voice typing ----------
+// ---------- voice: Klaus reads replies out loud, and the mic opens Windows voice typing ----------
 const TTS = window.speechSynthesis || null;
 function voices(){ return TTS ? TTS.getVoices() : []; }
-function hush(){ if (TTS) TTS.cancel(); $('cvoice').classList.remove('talking'); }
+function hush(){ NV.run++; if (NV.audio){ try { NV.audio.pause(); } catch (e) { /* gone */ } NV.audio = null; } if (TTS) TTS.cancel(); $('cvoice').classList.remove('talking'); }
 // What gets read: the words, not the markup. Code blocks are named, not read out symbol by symbol.
 function speakable(t){
   return String(t).replace(/```[\s\S]*?```/g, ' (code block) ').replace(/`([^`]+)`/g, '$1').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/https?:\/\/\S+/g, ' link ').replace(/^\s{0,3}(#{1,6}|[-*+]|\d+\.)\s+/gm, '').replace(/[*_~>|]+/g, ' ').replace(/[ \t]+/g, ' ').trim();
 }
 function speak(text){
-  if (!TTS) return toast('This PC has no speech voices installed.', true);
   hush();
   const say = speakable(text); if (!say) return;
-  // Short pieces: long single utterances can cut out part way through.
+  const natural = /^piper:/.test(S.voice || '');
+  if (!natural && !TTS) return toast('This PC has no speech voices installed.', true);
+  // Short pieces: long single utterances can cut out part way through, and a natural voice starts sooner on a short one.
   const bits = []; let cur2 = '';
   for (const sn of say.split(/(?<=[.!?:;])\s+|\n+/)){
     if (!sn.trim()) continue;
     if ((cur2 + ' ' + sn).length > 240 && cur2){ bits.push(cur2); cur2 = sn; } else cur2 = cur2 ? cur2 + ' ' + sn : sn;
   }
   if (cur2) bits.push(cur2);
+  if (natural) return speakNatural(bits);
   const v = voices().find(x => x.name === S.voice) || null;
   bits.forEach((b, i) => {
     const u = new SpeechSynthesisUtterance(b); if (v) u.voice = v; u.rate = S.rate || 1;
@@ -2258,6 +2451,24 @@ function speak(text){
     if (i === bits.length - 1) u.onend = u.onerror = () => $('cvoice').classList.remove('talking');
     TTS.speak(u);
   });
+}
+// A natural voice: each piece is made into sound on this PC, the next one being prepared while the current one plays.
+const NV = {run: 0, audio: null};
+async function speakNatural(bits){
+  const run = ++NV.run, id = S.voice.slice(6), make = b => call('voiceSay', {id, text: b, rate: S.rate || 1});
+  $('cvoice').classList.add('talking');
+  try {
+    let next = make(bits[0]);
+    for (let i = 0; i < bits.length; i++){
+      const r = await next; if (run !== NV.run) return;
+      next = i + 1 < bits.length ? make(bits[i + 1]) : null; if (next) next.catch(() => {});
+      if (!r || !r.wav) continue;
+      const url = URL.createObjectURL(new Blob([r.wav], {type: 'audio/wav'})), au = new Audio(url); NV.audio = au;
+      await new Promise(res => { au.onended = au.onerror = res; au.onpause = res; au.play().catch(res); });
+      URL.revokeObjectURL(url); if (run !== NV.run) return;
+    }
+  } catch (e) { if (run === NV.run) fail(e); }
+  if (run === NV.run) $('cvoice').classList.remove('talking');
 }
 $('cvoice').onclick = () => {
   if (TTS && TTS.speaking){ hush(); return toast('Stopped reading. Voice is still on for the next reply.'); }
@@ -2269,7 +2480,7 @@ $('cvoice').onclick = () => {
 let MIC = false;
 function micPaint(){
   document.body.classList.toggle('miclive', MIC); $('cmic').classList.toggle('live', MIC); $('cmic').querySelector('.lb').textContent = MIC ? 'mic on' : 'mic';
-  const t = $('cin').value.trim(), w = $('micwords'); w.textContent = t ? t.slice(-160) : 'listening, say what you want to ask Claude'; w.classList.toggle('has', !!t);
+  const t = $('cin').value.trim(), w = $('micwords'); w.textContent = t ? t.slice(-160) : 'listening, say what you want to ask Klaus'; w.classList.toggle('has', !!t);
 }
 function micToggle(){ MIC = !MIC; if (MIC) $('cin').focus(); call('dictate').catch(e => { MIC = false; micPaint(); fail(e); }); micPaint(); }
 $('cmic').onclick = micToggle; $('micoff').onclick = micToggle;
@@ -2302,7 +2513,7 @@ function pick(btn, list, key){
 // Settings: one line per setting. A line with ▸ opens the short list of choices for it, and
 // picking one comes straight back here, so the menu stays one screen tall however much is in it.
 // Settings: a window over the app, with sections down the left and room to read on the right.
-let SETTAB = 'look';
+let SETTAB = 'look', NVDL = false;
 function closeSettings(){ $('setv').classList.remove('on'); hush(); }
 function openSettings(tab){
   if (tab) SETTAB = tab;
@@ -2318,25 +2529,50 @@ function openSettings(tab){
   const head = (t, lead) => main.append(el('h2', '', t), el('div', 'lead', lead));
   if (SETTAB === 'look'){
     head('Appearance', 'How Loom looks. Changes apply straight away.');
-    let g = group('Theme', 'Claude stays orange and git stays green in every theme.');
+    let g = group('Theme', 'Klaus stays orange and git stays green in every theme.');
     choices(g, THEMES.filter(Array.isArray).map(t => [t[0], t[1], t[2]]), v => S.theme === v, v => { S.theme = v; applyTheme(); });
+    g = group('Text font', 'Used for everything except code, which stays fixed-width.');
+    choices(g, FONTS.map(f => [f[0], f[1], f[2]]), v => (FONTS.some(f => f[0] === S.font) ? S.font : 'sans') === v, v => { S.font = v; applyFont(); });
+    g = group('Board background', 'What sits behind your notes.');
+    choices(g, BOARD_BGS, v => (S.bbg || 'dots') === v, v => { S.bbg = v; boardBg(); });
     g = group('Pane colours');
-    toggle(g, 'Each pane in its own colour', 'Files, git and Claude each get their own accent so you can tell them apart at a glance.', S.tint !== false, () => { S.tint = S.tint === false; applyTheme(); });
+    toggle(g, 'Each pane in its own colour', 'Files, git and Klaus each get their own accent so you can tell them apart at a glance.', S.tint !== false, () => { S.tint = S.tint === false; applyTheme(); });
     g = group('Motion', 'How columns move when you go through folders.');
     choices(g, [['full', 'Smooth', 'slide and fade'], ['quick', 'Quick', 'shorter'], ['off', 'Off', 'no motion']], v => (S.motion || 'full') === v, v => { S.motion = v; });
   } else if (SETTAB === 'layout'){
     head('Layout', 'Where things sit in the window.');
     let g = group('List of chats');
     choices(g, [['side', 'Down the side', 'a list next to the chat'], ['top', 'Across the top', 'tabs above the chat']], v => (S.chatsPos === 'top' ? 'top' : 'side') === v, v => { S.chatsPos = v; cBar(); });
-    g = group('Claude pane');
+    g = group('App dock');
+    toggle(g, 'Show the app dock', 'Your pinned programs along the bottom, like the taskbar. Use the + at the end of it to pin more.', S.dockOn !== false, () => { S.dockOn = S.dockOn === false; drawAppDock(); requestAnimationFrame(() => { applyPanes(); alignCols(); drawWires(); }); });
+    g = group('Klaus pane');
     choices(g, [['right', 'On the right'], ['left', 'On the left']], v => (S.side === 'left' ? 'left' : 'right') === v, v => { S.side = v; afterPanes(); });
   } else if (SETTAB === 'voice'){
-    head('Voice', 'Claude reading replies out loud. The mic button in the chat is separate: it uses Windows voice typing.');
+    head('Voice', 'Klaus reading replies out loud. The mic button in the chat is separate: it uses Windows voice typing.');
     let g = group('Read aloud');
-    toggle(g, 'Claude reads replies out loud', 'Each finished reply is spoken. Code blocks are skipped.', !!S.speak, () => { $('cvoice').click(); });
+    toggle(g, 'Klaus reads replies out loud', 'Each finished reply is spoken. Code blocks are skipped.', !!S.speak, () => { $('cvoice').click(); });
     g = group('Speed');
-    choices(g, [[.9, 'Slower'], [1, 'Normal'], [1.2, 'Faster'], [1.45, 'Fast']], v => (S.rate || 1) === v, v => { S.rate = v; saveAll(); speak('This is the speed.'); });
-    g = group('Voice', 'These are the voices installed in Windows. Picking one plays a sample.');
+    choices(g, [[.9, 'Slower'], [1, 'Normal'], [1.2, 'Faster'], [1.45, 'Fast']], v => (S.rate || 1) === v, v => { S.rate = v; saveAll(); setTimeout(() => speak('This is the speed.'), 50); });
+    g = group('Natural voices', 'More human sounding. They run on this PC and work offline once downloaded. Each voice is a one-time download of about 63 MB, plus 22 MB for the engine the first time.');
+    const nbox = el('div', 'sopts'); g.append(nbox);
+    const nprog = el('div', 'sd'); nprog.style.marginTop = '12px'; g.append(nprog);
+    call('voiceList').then(r => {
+      for (const v of r.voices){
+        const on = S.voice === 'piper:' + v.id, b = el('button', 'sopt' + (on ? ' on' : ''), v.name); b.append(el('small', '', v.who + (v.installed ? '  ·  downloaded' : '  ·  not downloaded yet')));
+        b.onclick = async () => {
+          if (!v.installed){
+            if (NVDL) return toast('A voice is already downloading.');
+            if (!(await ask('Download the voice ' + v.name + '?', ['About ' + (r.engine ? '63' : '85') + ' MB, once. It is saved on this PC and works offline after that.'], [['Cancel', null], ['Download', true, true]]))) return;
+            NVDL = true; const t = setInterval(async () => { const p = await call('voiceProgress').catch(() => null); if (p && !p.done && $('setv').classList.contains('on')) nprog.textContent = 'Downloading ' + v.name + ': ' + Math.round(100 * p.got / p.total) + '%'; }, 700);
+            try { await call('voiceInstall', {id: v.id}); } catch (e) { clearInterval(t); NVDL = false; nprog.textContent = ''; return fail(e); }
+            clearInterval(t); NVDL = false;
+          }
+          S.voice = 'piper:' + v.id; saveAll(); if ($('setv').classList.contains('on')) openSettings(); speak('This is how I sound.');
+        };
+        nbox.append(b);
+      }
+    }).catch(() => { nbox.append(el('div', 'sd', 'Natural voices are not available in this build.')); });
+    g = group('Windows voices', 'These are the voices installed in Windows. Picking one plays a sample.');
     const all = voices(), en = all.filter(v => /^en/i.test(v.lang)), list = (en.length ? en : all).slice(0, 24);
     choices(g, [['', 'Windows default'], ...list.map(v => [v.name, v.name.replace(/^Microsoft /, '').replace(/ - .*/, ''), v.lang])], v => (S.voice || '') === v, v => { S.voice = v; saveAll(); speak(v ? 'This is how I sound.' : 'This is the default voice.'); });
     if (!all.length) g.append(el('div', 'sd', 'No voices found on this PC.'));
@@ -2344,12 +2580,18 @@ function openSettings(tab){
     head('Start-up and folder', 'What Loom opens on, and the folder everything lives under.');
     let g = group('When Loom starts');
     choices(g, [[true, 'The board', 'sticky notes and a jump into any project'], [false, 'Where I left off', 'the folder and panes from last time']], v => !!S.boardStart === v, v => { S.boardStart = v; });
+    g = group('Windows');
+    toggle(g, 'Full screen', 'Loom covers the whole display, including the Windows taskbar. F11 switches it on and off at any time.', !!S.full, () => setFull(!S.full));
+    const li = el('div'); g.append(li);
+    call('loginItem', {}).then(r => { toggle(li, 'Open Loom when Windows starts', 'Loom opens by itself after you sign in to this PC.', r.on, () => { call('loginItem', {set: !r.on}).then(x => toast(x.on ? 'Loom will open when Windows starts.' : 'Loom will no longer open when Windows starts.')).catch(fail); r.on = !r.on; }); }).catch(() => {});
+    const kk = el('div'); g.append(kk);
+    call('klausKey', {}).then(r => { toggle(kk, 'Copilot key opens Klaus', S.klausKey === false ? 'Off. The key does what Windows wants.' : r.on ? 'On. From any program, the Copilot key brings Loom forward with the cursor in the Klaus box.' : 'Windows did not let Loom take the key, so it still does what Windows wants.', S.klausKey !== false && r.on, () => { S.klausKey = S.klausKey === false; call('klausKey', {set: S.klausKey !== false}).catch(fail); }); }).catch(() => {});
     g = group('Root folder', 'Everything you browse, every chat and the board belong to this folder. Chats follow it if you move it up or down.');
     g.append(el('div', 'spath', HOME || 'none chosen'));
     const b = el('button', 'sbtn', 'Change folder...'); b.style.marginTop = '12px'; b.onclick = async () => { await chooseRoot(); openSettings(); }; g.append(b);
   } else {
     const ac = C.acct || {};
-    head('Claude account', 'Loom uses the Claude Code already installed on this PC, with its own sign-in. No keys are stored in Loom.');
+    head('Claude account', 'Klaus is Claude Code running inside Loom. He uses the Claude Code already installed on this PC, with its own sign-in. No keys are stored in Loom.');
     const g = group(!ac.found ? 'Claude Code is not installed on this PC' : ac.loggedIn ? 'Signed in' : 'Not signed in', !ac.found ? 'Install Claude Code, then restart Loom. The steps are in READ ME FIRST.' : ac.loggedIn ? (ac.email || '') + (ac.plan ? '  ·  ' + ac.plan + ' plan' : '') : 'Sign in to start chatting.');
     const row = el('div', 'sopts');
     if (ac.found){ const b = el('button', 'sbtn' + (ac.loggedIn ? '' : ' pri'), ac.loggedIn ? 'Sign in as someone else...' : 'Sign in to Claude...'); b.onclick = async () => { if (fm.claude.login){ await fm.claude.login(); toast('Finish signing in in the window that opened, then click Check again.'); } }; row.append(b); }
@@ -2377,7 +2619,7 @@ async function phoneLink(){
     'A console window opens and links this PC to the Claude app on your phone.',
     'The first time, it asks two questions. Answer y to both.',
     'On your phone: Claude app, Code tab, pick the session named "Loom ' + baseName(HOME) + '". Or press the space bar in the console window and scan the QR code.',
-    'Claude works here on this PC, in this root folder, so files it changes show up in Loom.',
+    'Klaus works here on this PC, in this root folder, so files it changes show up in Loom.',
     'Keep that window open and the PC awake. Closing the window ends the link.',
   ], [['Cancel', null], ['Start phone link', true, true]]);
   if (!go2) return;
@@ -2414,7 +2656,7 @@ async function syncNow(){
   if (err) return fail(err);
   $('toast').className = '';
   const lines = [
-    r.claudeWrote ? 'Claude wrote the handoff and it is on GitHub.' : 'The raw notes are on GitHub.',
+    r.claudeWrote ? 'Klaus wrote the handoff and it is on GitHub.' : 'The raw notes are on GitHub.',
     'Covered ' + plural(r.chats, 'chat') + ', ' + plural(r.changed, 'changed file') + ' and ' + r.repos + (r.repos === 1 ? ' repository' : ' repositories') + ' with activity, across ' + plural(r.projects, 'project') + '.',
   ];
   if (r.fromPhone.length) lines.push('Pulled in ' + plural(r.fromPhone.length, 'note') + ' from your phone: ' + r.fromPhone.join(', '));
@@ -2442,13 +2684,13 @@ $('cin').addEventListener('compositionend', () => {
 $('cin').addEventListener('keydown', ev => {
   if (!appKey(ev)){
     if (ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); cSend(); }
-    else if (ev.key === 'Escape'){ ev.preventDefault(); $('cin').blur(); }
+    else if (ev.key === 'Escape'){ ev.preventDefault(); $('cin').blur(); if (!$('cin').value.trim() && !MIC) openBoard(); }
   }
   ev.stopPropagation();
 });
 $('cin').addEventListener('input', () => { const t = $('cin'); t.style.height = 'auto'; t.style.height = Math.min(200, t.scrollHeight + 2) + 'px'; });
 const LOOMMARK = '<svg class="loommark" viewBox="0 0 100 100" width="26" height="26"><g transform="rotate(-7 50 50)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M32.1 10.9Q32.0 17.9 31.8 21.4Q31.6 24.9 31.4 28.4Q31.2 31.9 31.8 35.3Q32.5 38.8 32.6 42.3L32.7 45.8M32.0 54.2Q32.0 61.2 31.9 64.6Q31.8 68.1 32.4 71.6Q33.0 75.0 32.7 78.5Q32.4 82.0 32.3 85.5L32.1 89.0M50.5 16.7Q51.7 22.3 50.8 25.0L49.9 27.8M50.6 36.2Q50.0 43.1 50.1 46.5Q50.2 50.0 49.5 53.4Q48.9 56.9 49.7 60.4L50.4 63.8M50.0 72.2Q48.9 80.9 48.9 85.3L48.9 89.7M67.6 11.7Q68.4 18.5 68.3 21.9Q68.2 25.3 68.3 28.7Q68.5 32.1 68.7 35.6Q68.9 39.0 68.6 42.4L68.3 45.8M67.4 54.2Q67.8 60.7 67.3 64.0Q66.8 67.2 67.2 70.5Q67.6 73.8 67.2 77.0Q66.8 80.3 67.5 83.5L68.3 86.8M12.3 32.4Q20.0 31.1 23.9 31.1L27.8 31.2M36.2 32.2Q43.1 31.6 46.6 31.3Q50.0 31.1 53.5 31.8Q56.9 32.5 60.4 32.0L63.8 31.4M72.2 31.8Q78.1 31.6 81.1 31.8L84.1 32.0M11.6 51.9Q18.4 51.5 21.9 51.5Q25.3 51.4 28.7 51.2Q32.1 51.0 35.5 50.9Q39.0 50.8 42.4 50.6L45.8 50.5M54.2 49.6Q61.3 50.5 64.9 50.0Q68.4 49.5 72.0 48.9Q75.5 48.3 79.0 48.1Q82.6 48.0 86.2 48.1L89.7 48.2M13.2 69.0Q20.5 69.5 24.2 68.7L27.8 67.8M36.2 67.5Q43.1 67.7 46.5 67.8Q50.0 67.9 53.5 68.3Q56.9 68.7 60.4 68.4L63.8 68.2M72.2 67.7Q78.9 66.3 82.2 66.6L85.6 66.9" stroke-width="4.3"/><path d="M32.1 11.4Q31.1 18.1 31.9 21.5Q32.6 24.8 32.2 28.2Q31.7 31.5 31.4 34.9Q31.0 38.2 31.8 41.6L32.7 44.9M31.8 55.7Q30.7 62.5 31.0 65.8Q31.2 69.1 32.5 72.3Q33.7 75.6 33.1 78.9Q32.4 82.3 32.8 85.6L33.2 88.9M30.3 12.4Q29.9 8.6 29.7 3.6M31.8 12.4Q29.3 6.6 29.2 3.1M30.9 12.4Q30.4 7.4 31.3 2.8M32.8 87.4Q31.4 89.5 30.0 92.9M32.8 87.4Q31.5 89.2 31.2 93.3M33.1 87.4Q33.6 92.3 35.7 94.8M52.7 16.9Q52.6 21.7 51.8 24.0L51.0 26.3M50.1 36.8Q50.3 43.2 50.0 46.5Q49.7 49.7 50.4 52.9Q51.0 56.2 50.2 59.4L49.4 62.6M48.5 72.5Q49.7 80.7 49.8 84.8L49.9 88.8M51.3 18.2Q53.5 13.3 56.0 9.6M51.2 18.2Q49.6 15.6 48.9 13.6M51.4 18.2Q52.2 13.5 54.3 11.1M48.5 88.1Q49.2 91.4 47.5 93.7M49.0 88.1Q48.1 93.6 46.0 97.1M48.3 88.1Q50.6 93.6 50.6 96.8M68.1 12.8Q68.2 19.4 67.6 22.7Q66.9 25.9 67.7 29.3Q68.5 32.6 67.8 35.8Q67.1 39.1 66.5 42.4L66.0 45.6M67.7 55.9Q67.3 62.0 67.3 65.0Q67.3 68.1 67.5 71.1Q67.7 74.2 68.1 77.2Q68.5 80.2 68.8 83.3L69.1 86.3M68.4 13.2Q68.6 7.7 68.1 4.0M68.5 13.2Q69.7 8.9 69.7 3.9M68.6 13.2Q66.2 8.1 64.9 5.2M67.9 85.3Q70.2 89.3 70.6 92.2M68.1 85.3Q69.4 89.5 70.9 91.7M67.0 85.3Q67.3 89.0 69.0 90.4M12.3 30.6Q19.8 31.6 23.4 30.6L27.0 29.6M37.2 30.7Q43.6 30.7 46.9 31.2Q50.1 31.6 53.3 31.7Q56.5 31.7 59.7 31.7L62.9 31.8M72.3 31.6Q77.4 31.5 79.9 31.8L82.4 32.2M13.8 32.2Q10.0 30.9 5.9 30.0M13.8 32.1Q10.9 32.4 9.1 34.5M13.8 32.0Q10.0 31.0 7.7 29.6M82.6 32.5Q84.9 31.9 89.4 33.5M82.6 32.3Q86.1 31.3 90.6 29.9M82.6 32.9Q86.3 32.1 89.0 32.6M13.0 50.8Q19.4 51.5 22.7 51.0Q25.9 50.5 29.1 51.0Q32.4 51.6 35.6 51.5Q38.8 51.5 42.1 51.5L45.3 51.6M54.6 49.2Q61.5 49.9 64.9 49.3Q68.3 48.6 71.7 49.4Q75.2 50.3 78.6 49.6Q82.0 48.9 85.4 48.9L88.8 49.0M13.1 51.8Q9.1 51.1 7.1 51.7M13.1 51.1Q11.2 49.3 7.5 48.2M13.1 52.0Q9.1 51.1 7.3 49.6M88.2 48.5Q92.8 48.0 96.5 47.5M88.2 48.9Q92.1 48.5 97.6 50.3M88.2 48.2Q92.7 50.0 95.0 51.5M15.1 66.9Q21.0 68.0 23.9 69.0L26.8 70.0M36.3 67.8Q43.0 69.1 46.3 68.7Q49.5 68.4 52.7 67.3Q55.9 66.1 59.3 66.8L62.6 67.4M73.0 68.4Q78.9 68.6 81.8 68.5L84.7 68.5M14.7 68.5Q11.8 68.5 8.9 66.4M14.7 68.9Q10.9 68.4 5.9 69.7M14.7 69.5Q10.5 67.6 6.6 67.8M84.1 66.6Q87.8 65.1 90.0 65.2M84.1 66.2Q88.2 67.9 92.8 69.7M84.1 67.6Q86.3 66.2 90.4 64.3" stroke-width="1.5" opacity=".75"/></g></svg>';
-$('clogo').innerHTML = SPARK; $('brandlogo').innerHTML = LOOMMARK;
+$('clogo').innerHTML = CRITTER; $('brandlogo').innerHTML = LOOMMARK;
 
 // ---------- the board ----------
 // The start screen: loose sticky notes, saved inside the root folder next to the chats.
@@ -2470,6 +2712,30 @@ async function loadBoard(){
   B.z = B.notes.reduce((m, n) => Math.max(m, n.z || 0), 1);
   if (boardOpen()){ drawBoard(); drawRail(); loadFolders().then(drawRail); }
 }
+// Notes Klaus marked as finished: ask once whether to take them off the board. Yes removes them, no keeps
+// them and stops asking about those.
+const noteLine = n => n.parts.map(x => x.p != null ? '/' + x.p : (x.t || '')).join(' ').replace(/\s+/g, ' ').trim().slice(0, 90) || '(empty note)';
+let doneAsking = false;
+async function boardDoneCheck(){
+  if (doneAsking || !HOME || B.saveT || $('veil').classList.contains('on')) return;
+  if (document.activeElement && document.activeElement.classList.contains('ntext')) return;
+  doneAsking = true;
+  try {
+    const r = await call('boardGet'); const fresh = (r.notes || []).filter(n => n && Array.isArray(n.parts));
+    const done = fresh.filter(n => n.done && !n.keep);
+    if (JSON.stringify(fresh) !== JSON.stringify(B.notes)){ B.notes = fresh; B.z = B.notes.reduce((m, n) => Math.max(m, n.z || 0), 1); if (boardOpen()){ drawBoard(); drawRail(); } }
+    if (!done.length) return;
+    const yes = await ask(done.length === 1 ? 'This note looks finished. Take it off the board?' : 'These ' + done.length + ' notes look finished. Take them off the board?',
+      done.map(n => noteLine(n) + '  (' + n.done + ')'), [['No, keep', false], ['Yes, remove', true, true]]);
+    const ids = new Set(done.map(n => n.id));
+    if (yes) B.notes = B.notes.filter(n => !ids.has(n.id));
+    else for (const n of B.notes) if (ids.has(n.id)){ delete n.done; n.keep = true; }
+    saveBoardNow(); if (boardOpen()){ drawBoard(); drawRail(); }
+    if (yes) toast(plural(done.length, 'note') + ' removed from the board.');
+  } catch (e) { /* board not readable right now */ }
+  finally { doneAsking = false; }
+}
+setTimeout(boardDoneCheck, 2500);
 function saveBoardNow(){
   clearTimeout(B.saveT); B.saveT = 0;
   if (!HOME) return;
@@ -2527,10 +2793,67 @@ function readParts(root){
   } })(root);
   return out;
 }
+// Zoom. The board never lets a note sit out of sight: dropping one past the edge zooms out until everything
+// fits, and zooming out stops (with a little spring) at the point where the whole board is in view.
+const BZ = {z: 1, raf: 0, t: 0};
+const bz = () => BZ.z;
+function bzSet(z){ BZ.z = z; const c = $('bcanvas'); c.style.zoom = z; c.style.minWidth = (100 / z) + '%'; c.style.minHeight = (100 / z) + '%'; const b = $('bzfit'); if (b) b.textContent = Math.round(z * 100) + '%'; $('bwrap').style.overflow = z <= bzFit() + .012 ? 'hidden' : 'auto'; }
+function bzFit(){
+  const w = $('bwrap'); let cw = 0, ch = 0;
+  for (const e of $('bcanvas').querySelectorAll('.sticky')){ cw = Math.max(cw, e.offsetLeft + e.offsetWidth + 24); ch = Math.max(ch, e.offsetTop + e.offsetHeight + 24); }
+  if (!cw || !w.offsetWidth) return 1;
+  return Math.max(.3, Math.min(1, w.offsetWidth / cw, w.offsetHeight / ch));
+}
+function bzTo(target, ms){
+  cancelAnimationFrame(BZ.raf); const from = BZ.z, t0 = performance.now(); ms = motionMs() ? (ms || 320) : 0;
+  const back = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };       // settles with a small overshoot
+  (function step(){ const x = ms ? Math.min(1, (performance.now() - t0) / ms) : 1; bzSet(from + (target - from) * back(x)); if (x < 1) BZ.raf = requestAnimationFrame(step); else { bzSet(target); S.bzoom = target; saveAll(); } })();
+}
+// After a note is moved or the board opens: if anything is out of view, pull back until it all fits.
+// e is the note that was just dropped. Dropped out of view: pull back to fit. Dropped back in, so there is now
+// room to spare: come back up to where everything just fits (never past 100% on its own).
+function boardRefit(e){
+  const fit = bzFit(), w = $('bwrap'); let hidden = BZ.z > fit + .005;
+  if (e && hidden){ const r = e.getBoundingClientRect(), wr = w.getBoundingClientRect(); hidden = r.right > wr.right + 2 || r.bottom > wr.bottom + 2 || r.left < wr.left - 2 || r.top < wr.top - 2; }
+  if (hidden){ w.scrollLeft = 0; w.scrollTop = 0; bzTo(fit); }
+  else if (BZ.z < Math.min(1, fit) - .005) bzTo(Math.min(1, fit));
+}
+// Lines between notes that depend on each other, drawn under the notes like the wires in the file columns.
+function drawLinks(temp){
+  const c = $('bcanvas'); let svg = $('blinks');
+  if (!svg){ svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'blinks'; c.prepend(svg); }
+  const mid = n => { const e = c.querySelector('.sticky[data-id="' + n.id + '"]'); return e ? [n.x + e.offsetWidth / 2, n.y + e.offsetHeight / 2] : null; };
+  let out = '';
+  for (const n of B.notes) for (const id of n.links || []){
+    const t = B.notes.find(x => x.id === id), a = mid(n), b = t && mid(t); if (!a || !b) continue;
+    const dx = b[0] - a[0], dy = b[1] - a[1], bend = Math.min(90, Math.hypot(dx, dy) * .18), nx = -dy / (Math.hypot(dx, dy) || 1), ny = dx / (Math.hypot(dx, dy) || 1);
+    const cx = (a[0] + b[0]) / 2 + nx * bend, cy = (a[1] + b[1]) / 2 + ny * bend, d = 'M' + a[0] + ' ' + a[1] + 'Q' + cx + ' ' + cy + ' ' + b[0] + ' ' + b[1];
+    const px = (a[0] + 2 * cx + b[0]) / 4, py = (a[1] + 2 * cy + b[1]) / 4, ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;      // the middle of the curve, where the arrow sits
+    out += '<path class="hit" data-a="' + n.id + '" data-b="' + id + '" d="' + d + '"/><path class="ln" d="' + d + '"/><path class="ar" d="M-9 -7L9 0L-9 7Z" transform="translate(' + px + ' ' + py + ') rotate(' + ang + ')"/>';
+  }
+  if (temp){ const a = mid(temp.from); if (a) out += '<path class="tmp" d="M' + a[0] + ' ' + a[1] + 'L' + temp.to[0] + ' ' + temp.to[1] + '"/>'; }
+  svg.innerHTML = out;
+}
+$('bcanvas').addEventListener('click', ev => {
+  const h = ev.target.closest && ev.target.closest('#blinks .hit'); if (!h) return;
+  const n = B.notes.find(x => x.id === h.dataset.a); if (!n) return;
+  n.links = (n.links || []).filter(i => i !== h.dataset.b); saveBoard(); drawLinks(); toast('Untied.');
+});
+// Notes picked with a drag across the background. Drag any one of them and they all move.
+const BSEL = new Set();
+function pickNotes(ids){ BSEL.clear(); for (const i of ids) BSEL.add(i); for (const s of $('bcanvas').querySelectorAll('.sticky')) s.classList.toggle('picked', BSEL.has(s.dataset.id)); }
+function bzStep(mult, ax, ay){
+  const w = $('bwrap'), fit = bzFit(), old = BZ.z, z = Math.max(fit * .86, Math.min(1.6, old * mult));
+  const mx = ax == null ? w.clientWidth / 2 : ax, my = ay == null ? w.clientHeight / 2 : ay, px = (w.scrollLeft + mx) / old, py = (w.scrollTop + my) / old;
+  cancelAnimationFrame(BZ.raf); bzSet(z); w.scrollLeft = px * z - mx; w.scrollTop = py * z - my;
+  clearTimeout(BZ.t); BZ.t = setTimeout(() => { const f = bzFit(); if (BZ.z < f) bzTo(f, 380); else { S.bzoom = BZ.z; saveAll(); } }, 170);     // too far out: spring back to where it all just fits
+}
 function sizeCanvas(){
   let w = 0, h = 0;
-  for (const n of B.notes){ w = Math.max(w, n.x + 300); h = Math.max(h, n.y + 320); }
-  const c = $('bcanvas'); c.style.width = w + 'px'; c.style.height = h + 'px';
+  const c = $('bcanvas');
+  for (const e of c.querySelectorAll('.sticky')){ w = Math.max(w, e.offsetLeft + e.offsetWidth + 24); h = Math.max(h, e.offsetTop + e.offsetHeight + 24); }
+  c.style.width = w + 'px'; c.style.height = h + 'px';
+  drawLinks();
 }
 function noteGo(e, n){
   const old = e.querySelector('.ngo'); if (old) old.remove();
@@ -2547,7 +2870,25 @@ function noteEl(n){
   col.onclick = () => colorPick(col, n, place);
   const del = el('button', '', '✕'); del.title = 'Remove this note';
   del.onclick = () => removeNote(n, true);
-  bar.append(col, del);
+  const lk = el('button', 'nlk', '⤳'); lk.title = 'Tie this note to another: drag from here onto the note that comes after it. Click a line to remove it.';
+  lk.addEventListener('mousedown', ev => {
+    ev.preventDefault(); ev.stopPropagation();
+    const pt = m => { const r = $('bcanvas').getBoundingClientRect(), zz = bz(); return [(m.clientX - r.left) / zz, (m.clientY - r.top) / zz]; };
+    const mv = m => drawLinks({from: n, to: pt(m)});
+    const up = m => {
+      removeEventListener('mousemove', mv); removeEventListener('mouseup', up);
+      const hit = document.elementFromPoint(m.clientX, m.clientY), s = hit && hit.closest('.sticky'), t = s && B.notes.find(x => x.id === s.dataset.id);
+      if (t && t !== n){
+        const had = (n.links || []).includes(t.id);
+        n.links = (n.links || []).filter(i => i !== t.id); if (!had) n.links.push(t.id);
+        t.links = (t.links || []).filter(i => i !== n.id);                     // one direction between two notes
+        saveBoard(); toast(had ? 'Untied.' : 'Tied together. The arrow points at what comes after. Click the line to remove it.');
+      }
+      drawLinks();
+    };
+    addEventListener('mousemove', mv); addEventListener('mouseup', up);
+  });
+  bar.append(lk, col, del);
   const tx = el('div', 'ntext'); tx.contentEditable = 'plaintext-only'; tx.spellcheck = true;
   for (const part of n.parts) tx.append(part.p != null ? tagEl(part.p) : document.createTextNode(part.t));
   const changed = () => { n.parts = readParts(tx); if (noteEmpty(n)) tx.textContent = ''; noteGo(e, n); saveBoard(); };
@@ -2570,9 +2911,12 @@ function noteEl(n){
     if (ev.target.closest('button')){ ev.preventDefault(); return; }   // keep the note being typed in focused
     if (ev.button !== 0) return;
     ev.preventDefault();
-    const sx = ev.clientX - n.x, sy = ev.clientY - n.y; n.z = ++B.z; e.style.zIndex = n.z; e.classList.add('drag');
-    const move = m => { n.x = Math.max(0, Math.round(m.clientX - sx)); n.y = Math.max(0, Math.round(m.clientY - sy)); e.style.left = n.x + 'px'; e.style.top = n.y + 'px'; };
-    const upp = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', upp); e.classList.remove('drag'); sizeCanvas(); saveBoard(); };
+    const zz = bz(); n.z = ++B.z; e.style.zIndex = n.z; e.classList.add('drag');
+    if (!BSEL.has(n.id)) pickNotes([]);                    // dragging a note that is not picked: the pick is over
+    const group = (BSEL.has(n.id) ? B.notes.filter(x => BSEL.has(x.id)) : [n]).map(g => ({g, x0: g.x, y0: g.y, ge: g === n ? e : $('bcanvas').querySelector('.sticky[data-id="' + g.id + '"]')}));
+    const mx0 = ev.clientX, my0 = ev.clientY;
+    const move = m => { const dx = (m.clientX - mx0) / zz, dy = (m.clientY - my0) / zz; for (const it of group){ it.g.x = Math.max(0, Math.round(it.x0 + dx)); it.g.y = Math.max(0, Math.round(it.y0 + dy)); if (it.ge){ it.ge.style.left = it.g.x + 'px'; it.ge.style.top = it.g.y + 'px'; } } drawLinks(); };
+    const upp = () => { removeEventListener('mousemove', move); removeEventListener('mouseup', upp); e.classList.remove('drag'); sizeCanvas(); saveBoard(); boardRefit(e); };
     addEventListener('mousemove', move); addEventListener('mouseup', upp);
   });
   e.append(bar, tx); noteGo(e, n);
@@ -2597,11 +2941,12 @@ function addNote(x, y){
 }
 function addNoteInView(){
   const w = $('bwrap'), k = B.notes.length % 6;
-  addNote(w.scrollLeft + 60 + k * 34, w.scrollTop + 40 + k * 30);
+  addNote((w.scrollLeft + 60) / bz() + k * 34, (w.scrollTop + 40) / bz() + k * 30);
 }
 function removeNote(n, told){
   const i = B.notes.indexOf(n); if (i < 0) return;
   B.notes.splice(i, 1);
+  for (const o of B.notes) if (o.links) o.links = o.links.filter(x => x !== n.id);
   const e = $('bcanvas').querySelector('.sticky[data-id="' + n.id + '"]'); if (e) e.remove();
   if (told && !noteEmpty(n)){ B.gone = n; toast('Note removed. Ctrl+Z brings it back.'); }
   if (!B.notes.length) drawBoard();
@@ -2609,11 +2954,43 @@ function removeNote(n, told){
 }
 $('bcanvas').addEventListener('dblclick', ev => {
   if (ev.target.closest('.sticky')) return;
-  const r = $('bcanvas').getBoundingClientRect();
-  addNote(ev.clientX - r.left - 30, ev.clientY - r.top - 14);
+  const r = $('bcanvas').getBoundingClientRect(), zz = bz();
+  addNote((ev.clientX - r.left) / zz - 30, (ev.clientY - r.top) / zz - 14);
 });
 $('bcanvas').addEventListener('click', ev => { const t = ev.target.closest('.tag'); if (t){ ev.preventDefault(); openTag(t.dataset.p); } });
 $('bnew').onclick = addNoteInView;
+$('bwrap').addEventListener('wheel', ev => {
+  ev.preventDefault(); const r = $('bwrap').getBoundingClientRect();                  // the wheel zooms, a little at a time; a pinch zooms faster
+  bzStep(Math.exp(-ev.deltaY * (ev.ctrlKey ? .0022 : .0011)), ev.clientX - r.left, ev.clientY - r.top);
+}, {passive: false});
+// Background: left drag draws a box that picks notes, middle drag slides the board around.
+$('bwrap').addEventListener('mousedown', ev => {
+  if (ev.target.closest('.sticky, button')) return;
+  const w = $('bwrap');
+  if (ev.button === 1){
+    ev.preventDefault(); const x0 = ev.clientX, y0 = ev.clientY, sl = w.scrollLeft, st = w.scrollTop; w.classList.add('pan');
+    const mv = m => { w.scrollLeft = sl - (m.clientX - x0); w.scrollTop = st - (m.clientY - y0); };
+    const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); w.classList.remove('pan'); };
+    addEventListener('mousemove', mv); addEventListener('mouseup', up); return;
+  }
+  if (ev.button !== 0) return;
+  const x0 = ev.clientX, y0 = ev.clientY, box = $('bmarq'); let on = false;
+  const mv = m => {
+    if (!on && Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 6) return;
+    on = true; const l = Math.min(x0, m.clientX), t = Math.min(y0, m.clientY), r = Math.max(x0, m.clientX), b = Math.max(y0, m.clientY);
+    box.style.cssText = 'display:block;left:' + l + 'px;top:' + t + 'px;width:' + (r - l) + 'px;height:' + (b - t) + 'px';
+    const hit = []; for (const s of $('bcanvas').querySelectorAll('.sticky')){ const q = s.getBoundingClientRect(); if (q.left < r && q.right > l && q.top < b && q.bottom > t) hit.push(s.dataset.id); }
+    pickNotes(hit);
+  };
+  const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); box.style.display = 'none'; if (!on) pickNotes([]); else if (BSEL.size) toast(plural(BSEL.size, 'note') + ' picked. Drag any one of them to move them all.'); };
+  addEventListener('mousemove', mv); addEventListener('mouseup', up);
+});
+$('bwrap').addEventListener('auxclick', ev => { if (ev.button === 1) ev.preventDefault(); });
+const BOARD_BGS = [['dots', 'Dots'], ['grid', 'Grid'], ['graph', 'Graph paper'], ['lines', 'Ruled lines'], ['weave', 'Weave'], ['plain', 'Plain']];
+function boardBg(){ $('bcanvas').dataset.bg = BOARD_BGS.some(b => b[0] === S.bbg) ? S.bbg : 'dots'; }
+boardBg();
+{ const mk = (id, text, title, fn) => { const b = el('button', 'btn bzb', text); b.id = id; b.title = title; b.onclick = fn; return b; };
+  $('bnew').before(mk('bzout', '−', 'Zoom out. Ctrl + scroll does the same.', () => bzStep(1 / 1.2)), mk('bzfit', '100%', 'Fit every note in the window. Ctrl+0.', () => bzTo(bzFit())), mk('bzin', '+', 'Zoom in. Ctrl + scroll does the same.', () => bzStep(1.2))); }
 $('bgo').onclick = () => closeBoard();
 $('bbtn').onclick = () => (boardOpen() ? closeBoard() : openBoard());
 
@@ -2716,6 +3093,7 @@ function openBoard(){
   closeMenu(); document.body.dataset.board = '1'; $('bbtn').classList.add('on');
   if (!MIC && document.activeElement && document.activeElement.blur) document.activeElement.blur();
   drawBoard(); drawRail();
+  bzSet(Math.max(.3, Math.min(1.6, +S.bzoom || 1))); requestAnimationFrame(boardRefit);
   B.folders = null; loadFolders().then(drawRail);
   if (!B.saveT) call('boardGet').then(r => {             // pick up notes changed from another PC
     if (B.saveT || !boardOpen() || document.activeElement.classList.contains('ntext')) return;
@@ -2735,6 +3113,7 @@ function closeBoard(){
 function boardKey(ev){
   const k = ev.key, low = k.toLowerCase();
   if (document.activeElement === $('q')) return;
+  if (ev.ctrlKey && (k === '0' || k === '=' || k === '+' || k === '-')){ ev.preventDefault(); if (k === '0') bzTo(bzFit()); else bzStep(k === '-' ? 1 / 1.2 : 1.2); return; }
   if (k === 'Escape' || k === 'Enter' || (ev.ctrlKey && low === 'b')){ ev.preventDefault(); closeBoard(); }
   else if (ev.ctrlKey && low === 'z'){ ev.preventDefault(); if (B.gone){ B.notes.push(B.gone); B.gone = null; drawBoard(); drawRail(); saveBoard(); } }
   else if (ev.ctrlKey && low === 'f'){ ev.preventDefault(); $('q').focus(); $('q').select(); }
@@ -2767,7 +3146,7 @@ async function applyRoot(r){
   }
 }
 async function chooseRoot(){
-  if (C.busy) return toast('Wait for Claude to finish, or press stop, before changing the root folder.');
+  if (C.busy) return toast('Wait for Klaus to finish, or press stop, before changing the root folder.');
   applyRoot(await fm.root.choose());
 }
 function rootMenu(btn){
@@ -2775,7 +3154,7 @@ function rootMenu(btn){
   const items = [{head: 'root folder'}, {head: HOME || 'none chosen'}, {label: 'Choose folder...', strong: true, run: chooseRoot}];
   if (recents.length){
     items.push('-', {head: 'recent'});
-    for (const p of recents) items.push({label: p, run: async () => { if (C.busy) return toast('Wait for Claude to finish first.'); applyRoot(await fm.root.set(p)); }});
+    for (const p of recents) items.push({label: p, run: async () => { if (C.busy) return toast('Wait for Klaus to finish first.'); applyRoot(await fm.root.set(p)); }});
   }
   menu(r.left, r.bottom + 4, items);
 }
@@ -2783,7 +3162,7 @@ function needRoot(){
   delete document.body.dataset.board; $('bbtn').classList.remove('on');
   const cols = $('cols'); cols.textContent = ''; $('wires').innerHTML = ''; $('crumbs').textContent = '';
   const c = el('div', 'col act'); c.style.width = '460px';
-  const h = el('div', 'head'); h.append(el('div', 'hl', 'welcome'), el('div', 'hn', 'Pick your root folder'), el('div', 'hs', 'Everything you browse, and everything Claude works on, lives under it.'));
+  const h = el('div', 'head'); h.append(el('div', 'hl', 'welcome'), el('div', 'hn', 'Pick your root folder'), el('div', 'hs', 'Everything you browse, and everything Klaus works on, lives under it.'));
   const b = el('div', 'body'); const btn = el('button', 'btn pri', 'Choose folder...'); btn.style.margin = '14px 8px'; btn.onclick = chooseRoot; b.append(btn);
   c.append(h, b); cols.append(c);
 }
@@ -2798,12 +3177,30 @@ const THEMES = [
 ];
 if (!THEMES.some(t => Array.isArray(t) && t[0] === S.theme)) S.theme = '';
 function themeName(){ return THEMES.find(t => Array.isArray(t) && t[0] === S.theme)[1]; }
+// Changing theme cross-fades slowly, so going from a dark theme to a light one is not a flash in the face.
+// Text font, the same in every theme. Code, diffs and the terminal stay in the fixed-width face whatever is picked.
+const FONTS = [['sans', 'Clean', 'Segoe UI: the easiest to read in long stretches', '"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif'],
+  ['din', 'Technical', 'Bahnschrift: narrow, drafting-table feel', 'Bahnschrift,"Segoe UI",system-ui,sans-serif'],
+  ['mono', 'Typewriter', 'the original fixed-width look', '']];
+function applyFont(){
+  const f = FONTS.find(x => x[0] === S.font) || FONTS[0], r = document.documentElement;
+  if (f[3]) r.style.setProperty('--mono', f[3]); else r.style.setProperty('--mono', 'var(--fixed)');
+  r.style.fontSize = ''; document.body.style.fontSize = f[0] === 'mono' ? '' : '13.5px';
+  try { requestAnimationFrame(() => { alignCols(); drawWires(); }); } catch (e) { /* not drawn yet */ }
+}
+setTimeout(applyFont, 0);
+let themeNow;
 function applyTheme(){
-  const r = document.documentElement;
-  document.body.dataset.tint = S.tint === false ? '0' : '1';
-  if (S.theme) r.dataset.theme = S.theme; else delete r.dataset.theme;
-  const cs = getComputedStyle(r);
-  if (fm.look) fm.look({bg: cs.getPropertyValue('--bg').trim(), fg: cs.getPropertyValue('--fg').trim()});   // title bar buttons follow the theme
+  const r = document.documentElement, was = themeNow; themeNow = S.theme || '';
+  const set = () => {
+    document.body.dataset.tint = S.tint === false ? '0' : '1';
+    if (S.theme) r.dataset.theme = S.theme; else delete r.dataset.theme;
+  };
+  const look = () => { const cs = getComputedStyle(r); if (fm.look) fm.look({bg: cs.getPropertyValue('--bg').trim(), fg: cs.getPropertyValue('--fg').trim()}); };   // title bar buttons follow the theme
+  if (was !== undefined && was !== themeNow && document.startViewTransition && motionMs()){
+    try { const t = document.startViewTransition(set); t.finished.then(look, look); return; } catch (e) { /* fall through to the plain switch */ }
+  }
+  set(); look();
 }
 function themeMenu(x, y){
   menu(x, y, THEMES.map(t => t.head ? t : {label: (S.theme === t[0] ? '✓  ' : '    ') + t[1] + '   ·   ' + t[2],
@@ -2951,7 +3348,7 @@ async function gitShowDiff(){
   if (!G.repo || !G.st){ box.textContent = ''; return; }
   if (!file){
     box.textContent = '';
-    box.append(hist ? gNote(G.log && !G.log.length ? 'No commits yet' : '', '') : gNote('No local changes', 'Edit files in this repository, or ask Claude to, and they show up here.\nThen tick the ones you want, type a summary, and commit.'));
+    box.append(hist ? gNote(G.log && !G.log.length ? 'No commits yet' : '', '') : gNote('No local changes', 'Edit files in this repository, or ask Klaus to, and they show up here.\nThen tick the ones you want, type a summary, and commit.'));
     return;
   }
   if (!hist){ const f = G.st.files.find(x => x.path === file) || {}; head.append(el('div', 'hn', file), el('div', 'hs', (GK[f.kind] || GK.M)[1] + (f.orig ? '  ·  was ' + f.orig : ''))); }

@@ -11,6 +11,9 @@ contextBridge.exposeInMainWorld('fm', {
     set: p => ipcRenderer.invoke('root:set', p),
     choose: () => ipcRenderer.invoke('root:choose'),
   },
+  update: { apply: () => ipcRenderer.invoke('update:apply'), onReady: cb => ipcRenderer.on('update:ready', () => cb()) },
+  apps: { onWindows: cb => ipcRenderer.on('apps:windows', (e, list) => cb(list)) },
+  onSummon: cb => ipcRenderer.on('klaus:summon', () => cb()),
   term: {
     run: a => ipcRenderer.send('term:run', a),
     input: t => ipcRenderer.send('term:in', t),

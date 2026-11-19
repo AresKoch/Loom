@@ -237,6 +237,29 @@ function create({ workspace, fakeUsb }) {
     return { home: WORKSPACE };
   }
 
+  // Chats belong to the root folder, wherever you are inside it. If the root itself is moved up or down
+  // (picked too deep by accident, then backed out), the chats follow it instead of staying behind in the
+  // old root. Only roots that contain one another are merged; an unrelated project keeps its own chats.
+  async function adoptChats({ into, from }) {
+    const lc = s => path.resolve(s).toLowerCase(), nested = (a, c) => { const r = path.relative(lc(a), lc(c)); return !!r && !r.startsWith('..') && !path.isAbsolute(r); };
+    const dest = path.join(path.resolve(into), STORE, 'chats'); let moved = 0;
+    for (const f of [...new Set((from || []).filter(x => typeof x === 'string'))]) {
+      if (!f || lc(f) === lc(into) || !(nested(into, f) || nested(f, into))) continue;
+      const src = path.join(path.resolve(f), STORE, 'chats'); let names = [];
+      try { names = (await fsp.readdir(src)).filter(n => n.endsWith('.json') && goodId(n.slice(0, -5))); } catch (e) { continue; }
+      for (const n of names) {
+        try {
+          if (await exists(path.join(dest, n))) continue;
+          const c = JSON.parse(await fsp.readFile(path.join(src, n), 'utf8'));
+          if (c.session && !c.sessionRoot) c.sessionRoot = path.resolve(f);       // its Claude session belongs to the folder it was started from
+          await fsp.mkdir(dest, { recursive: true });
+          await fsp.writeFile(path.join(dest, n), JSON.stringify(c)); await fsp.rm(path.join(src, n), { force: true }); moved++;
+        } catch (e) { /* leave that one where it is */ }
+      }
+    }
+    return { moved };
+  }
+
   // ---------- shared chats ----------
   // Chats are saved inside the root folder (ROOT\.folder-map\chats\<id>.json), not on one PC.
   // Everyone who opens the same root folder sees the same chats.
@@ -269,7 +292,7 @@ function create({ workspace, fakeUsb }) {
     await fsp.mkdir(chatDir(), { recursive: true });
     const file = path.join(chatDir(), chat.id + '.json'), tmp = file + '.' + process.pid + '.tmp';
     const body = { title: String(chat.title || 'New chat').slice(0, 120), at: Number(chat.at) || Date.now(), session: chat.session || null,
-      sessionPc: chat.sessionPc || null, startedBy: chat.startedBy || null, msgs: Array.isArray(chat.msgs) ? chat.msgs.slice(-200) : [] };
+      sessionPc: chat.sessionPc || null, sessionRoot: chat.sessionRoot || null, startedBy: chat.startedBy || null, msgs: Array.isArray(chat.msgs) ? chat.msgs.slice(-200) : [] };
     await fsp.writeFile(tmp, JSON.stringify(body));
     await fsp.rename(tmp, file);
     return { _m: (await fsp.stat(file)).mtimeMs };
@@ -539,6 +562,16 @@ function create({ workspace, fakeUsb }) {
     return { ok: true };
   }
 
+  // Presses the Windows key, which opens the Start menu.
+  async function startMenu() {
+    if (process.platform !== 'win32') throw new Problem('The Start menu is a Windows thing.');
+    const ps = "Add-Type -Namespace LoomS -Name K -MemberDefinition '[DllImport(\"user32.dll\")] public static extern void keybd_event(byte v, byte s, uint f, System.UIntPtr e);'; "
+      + '$z = [UIntPtr]::Zero; [LoomS.K]::keybd_event(0x5B,0,0,$z); [LoomS.K]::keybd_event(0x5B,0,2,$z)';
+    try { await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { timeout: 20000 }); }
+    catch (e) { throw new Problem('Could not open the Start menu. Press the Windows key instead.'); }
+    return { ok: true };
+  }
+
   // ---------- the board ----------
   // Sticky notes for the start screen, kept with the chats (ROOT\.folder-map\board.json).
   // Folder tags are saved relative to the root, so the board still works if the root moves.
@@ -554,6 +587,8 @@ function create({ workspace, fakeUsb }) {
     const clean = (Array.isArray(notes) ? notes : []).slice(0, 400).map(n => ({
       id: goodId(n && n.id) ? n.id : Math.random().toString(36).slice(2, 12),
       x: num(n.x, 0, 20000), y: num(n.y, 0, 20000), c: num(n.c, 0, 20), r: num(n.r, -6, 6), z: num(n.z, 0, 1e9), at: Number(n.at) || Date.now(),
+      ...(n.done ? { done: String(n.done).slice(0, 300) } : {}), ...(n.keep ? { keep: true } : {}),
+      ...(Array.isArray(n.links) && n.links.some(goodId) ? { links: [...new Set(n.links.filter(goodId))].slice(0, 20) } : {}),      // notes that follow on from this one      // done: the helper says this one is finished. keep: the user said leave it.
       parts: (Array.isArray(n.parts) ? n.parts : []).slice(0, 80).map(part => {
         if (part && typeof part.p === 'string') {
           const rel = part.p.replace(/\\/g, '/').split('/').filter(x => x && x !== '.' && x !== '..').join('/').slice(0, 400);
@@ -569,7 +604,7 @@ function create({ workspace, fakeUsb }) {
     return { ok: true };
   }
 
-  return { root: () => WORKSPACE, setRoot, preview, chatsList, chatSave, chatDelete, boardGet, boardSave, zip, props, dictate, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
+  return { root: () => WORKSPACE, setRoot, adoptChats, preview, chatsList, chatSave, chatDelete, boardGet, boardSave, zip, props, dictate, startMenu, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
     startIndexing, TRASH, home: () => ({ home: WORKSPACE }) };
 }
 

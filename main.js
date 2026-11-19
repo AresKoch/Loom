@@ -1,5 +1,5 @@
 // Loom: desktop app window. All disk work is in backend.js, Claude is in claude.js.
-const { app, BrowserWindow, ipcMain, shell, nativeImage, Menu, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, nativeImage, Menu, dialog, globalShortcut } = require('electron');
 const path = require('path');
 const { spawn, execFile } = require('child_process');
 const fs = require('fs');
@@ -72,7 +72,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1500, height: 950, minWidth: 900, minHeight: 600,
     title: 'Loom', icon: path.join(__dirname, 'icon.png'), backgroundColor: (settings.look || {}).bg || '#0d0d0c', autoHideMenuBar: true, show: false,
-    titleBarStyle: 'hidden', titleBarOverlay: { color: (settings.look || {}).bg || '#0d0d0c', symbolColor: (settings.look || {}).fg || '#ebe3d3', height: 44 },
+    titleBarStyle: 'hidden', titleBarOverlay: { color: (settings.look || {}).bg || '#0d0d0c', symbolColor: (settings.look || {}).fg || '#ebe3d3', height: 58 },
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false, plugins: true },
   });
   Menu.setApplicationMenu(null);
@@ -103,7 +103,9 @@ function createWindow() {
   }
 }
 
-app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
+// Starting Loom while it is already open (a second click, or a key set to open Loom) brings it forward
+// with the cursor in Klaus's box.
+app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); win.webContents.send('klaus:summon'); } });
 app.on('window-all-closed', () => app.quit());
 
 app.whenReady().then(() => {
@@ -113,6 +115,8 @@ app.whenReady().then(() => {
   if (backend.root()) backend.adoptChats({ into: backend.root(), from: settings.recents }).catch(() => {});   // chats left in a deeper or higher root come along
 
   const git = gitLib.create({ check: p => backend.check(p), root: () => backend.root(), Problem });
+  const voice = require('./voice').create({ dir: path.join(app.getPath('userData'), 'piper') });
+  const apps = require('./apps').create({ Problem, getFileIcon: (f, o) => app.getFileIcon(f, o), readShortcut: f => shell.readShortcutLink(f), nativeImage });
   const sync = syncLib.create({ root: () => backend.root(), Problem });
   const actions = {
     // GIT tab. Every repository path is checked to be inside the root folder (see git.js).
@@ -152,6 +156,41 @@ app.whenReady().then(() => {
     preview: a => backend.preview(a),
     chatsList: a => backend.chatsList(a),
     chatSave: a => backend.chatSave(a),
+    startMenu: () => backend.startMenu(),
+    // The Copilot key on newer laptops sends Win+Shift+F23. When Windows lets Loom have it, it brings Loom
+    // forward from anywhere and puts the cursor in Klaus's box.
+    klausKey: a => {
+      const combo = 'Super+Shift+F23';
+      if (a && typeof a.set === 'boolean') {
+        try { globalShortcut.unregister(combo); } catch (e) { /* was not set */ }
+        if (a.set) { try { globalShortcut.register(combo, () => { if (!win || win.isDestroyed()) return; if (win.isMinimized()) win.restore(); win.show(); win.focus(); win.webContents.send('klaus:summon'); }); } catch (e) { /* refused */ } }
+      }
+      let on = false; try { on = globalShortcut.isRegistered(combo); } catch (e) { on = false; }
+      return { on };
+    },
+    appsList: a => apps.list(a || {}),
+    winList: () => { apps.watch(list => { for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('apps:windows', list); }); return { wins: apps.windows() }; },
+    winFocus: a => apps.focus({ pid: Number((a || {}).pid) }),
+    winIcon: a => apps.winIcon({ pid: Number((a || {}).pid) }),
+    appLaunch: a => apps.launch(a || {}),
+    appIcon: a => apps.icon(a || {}),
+    openCode: a => apps.vscode({ target: backend.check(String((a || {}).path || '')) }),
+    fullScreen: a => { if (win && a && typeof a.set === 'boolean') win.setFullScreen(a.set); return { on: !!(win && win.isFullScreen()) }; },
+    // Start with Windows: a shortcut named Loom in the user's Startup folder. That is the one place Windows
+    // always honours, it shows up under Startup apps in Settings, and deleting the shortcut undoes it.
+    loginItem: a => {
+      const lnk = path.join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'Loom.lnk');
+      if (a && typeof a.set === 'boolean' && process.platform === 'win32') {
+        try { app.setLoginItemSettings({ openAtLogin: false }); } catch (e) { /* the older way, cleared */ }
+        if (a.set) { if (!shell.writeShortcutLink(lnk, 'create', { target: process.execPath, cwd: path.dirname(process.execPath), description: 'Loom' })) throw new Problem('Could not add Loom to the Windows Startup folder.'); }
+        else { try { fs.rmSync(lnk, { force: true }); } catch (e) { throw new Problem('Could not remove Loom from the Windows Startup folder.'); } }
+      }
+      return { on: fs.existsSync(lnk), where: lnk };
+    },
+    voiceList: () => voice.list(),
+    voiceInstall: a => voice.install(a || {}),
+    voiceProgress: () => voice.progress(),
+    voiceSay: a => voice.say(a || {}),
     chatDelete: a => backend.chatDelete(a),
     boardGet: a => backend.boardGet(a),
     boardSave: a => backend.boardSave(a),
@@ -202,7 +241,7 @@ app.whenReady().then(() => {
   // Theme: the window passes its frame colours so the title bar buttons match.
   ipcMain.on('look', (event, l) => {
     const look = goodLook(l); if (!look || !win) return;
-    try { win.setTitleBarOverlay({ color: look.bg, symbolColor: look.fg, height: 44 }); win.setBackgroundColor(look.bg); } catch (e) { /* older Windows */ }
+    try { win.setTitleBarOverlay({ color: look.bg, symbolColor: look.fg, height: 58 }); win.setBackgroundColor(look.bg); } catch (e) { /* older Windows */ }
     settings.look = look; saveSettings();
   });
 
@@ -236,6 +275,31 @@ app.whenReady().then(() => {
       history: typeof msg.history === 'string' ? msg.history.slice(0, 40000) : null }, out);
   });
   app.on('before-quit', () => claude.stop());
+
+  // ---------- updates dropped in next to the app ----------
+  // A new build arrives as resources\app.asar.new. Windows will not let the running app replace its own
+  // app.asar, so Loom tells the window, and when asked it hands the swap to a tiny script that waits for
+  // Loom to close, moves the file into place and starts Loom again.
+  const updNew = path.join(process.resourcesPath || '', 'app.asar.new'), updCur = path.join(process.resourcesPath || '', 'app.asar');
+  let updSeen = null, updTold = false;
+  if (app.isPackaged && process.platform === 'win32') setInterval(() => {
+    fs.stat(updNew, (err, st) => {
+      if (err || !st.isFile() || st.size < 1000){ updSeen = null; updTold = false; return; }
+      const sig = st.size + '|' + st.mtimeMs;
+      if (sig !== updSeen || Date.now() - st.mtimeMs < 3000){ updSeen = sig; return; }       // still being written: look again next time
+      if (updTold) return; updTold = true;
+      for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send('update:ready');
+    });
+  }, 4000);
+  ipcMain.handle('update:apply', () => {
+    if (!fs.existsSync(updNew)) return { error: 'There is no update waiting.' };
+    const script = path.join(app.getPath('temp'), 'loom-update-' + process.pid + '.cmd');
+    fs.writeFileSync(script, ['@echo off', 'set N=0', ':try', 'move /y "' + updNew + '" "' + updCur + '" >nul 2>&1 && goto ok', 'set /a N+=1',
+      'if %N% geq 40 goto end', 'ping -n 2 127.0.0.1 >nul', 'goto try', ':ok', 'start "" "' + app.getPath('exe') + '"', ':end', 'del "%~f0"', ''].join('\r\n'));
+    spawn('cmd.exe', ['/c', script], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
+    setTimeout(() => app.quit(), 150);
+    return { ok: true };
+  });
 
   // ---------- terminal drawer ----------
   // Runs one command line at a time in a folder, through the normal Windows command shell, and streams what it
@@ -271,6 +335,8 @@ app.whenReady().then(() => {
   ipcMain.on('term:in', (e, text) => { if (termKid) { try { termKid.stdin.write(String(text)); } catch (e2) { /* closed */ } } });
   ipcMain.handle('term:stop', () => { termKill(); return { ok: true }; });
   app.on('before-quit', termKill);
+  app.on('will-quit', () => { try { globalShortcut.unregisterAll(); } catch (e) { /* none */ } });
+  app.on('before-quit', () => apps.unwatch());
 
   // Real Windows drag: lets files be dropped on Explorer, the desktop, or a USB window too.
   ipcMain.on('drag', (event, paths) => {
