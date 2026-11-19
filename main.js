@@ -1,6 +1,7 @@
 // Loom: desktop app window. All disk work is in backend.js, Claude is in claude.js.
 const { app, BrowserWindow, ipcMain, shell, nativeImage, Menu, dialog } = require('electron');
 const path = require('path');
+const { spawn, execFile } = require('child_process');
 const fs = require('fs');
 const { create, Problem } = require('./backend');
 const claudeLib = require('./claude');
@@ -235,6 +236,41 @@ app.whenReady().then(() => {
       history: typeof msg.history === 'string' ? msg.history.slice(0, 40000) : null }, out);
   });
   app.on('before-quit', () => claude.stop());
+
+  // ---------- terminal drawer ----------
+  // Runs one command line at a time in a folder, through the normal Windows command shell, and streams what it
+  // prints back to the window. Typed lines go to the running program. It is not a full console: programs that
+  // draw a screen (editors, menus) will not work, but npm, git, python and the like do.
+  let termKid = null;
+  const termKill = () => { const k = termKid; if (!k) return; k.stopped = true;
+    if (process.platform === 'win32') execFile('taskkill', ['/pid', String(k.pid), '/T', '/F'], { windowsHide: true }, () => {});
+    else { try { process.kill(-k.pid); } catch (e) { try { k.kill(); } catch (e2) { /* gone */ } } } };
+  ipcMain.handle('term:cd', (e, a) => {
+    a = a || {}; const base = isDir(a.cwd) ? a.cwd : backend.root() || process.cwd();
+    let to = String(a.to || '').trim().replace(/^\/d\s+/i, '').replace(/^"(.*)"$/, '$1');
+    if (!to || to === '~') to = require('os').homedir();
+    const p = path.resolve(base, to);
+    return isDir(p) ? { cwd: p } : { error: 'There is no folder ' + p };
+  });
+  ipcMain.on('term:run', (event, a) => {
+    const out = ev => { if (!event.sender.isDestroyed()) event.sender.send('term:event', ev); };
+    a = a || {}; const cmd = String(a.cmd || '').slice(0, 8000), cwd = isDir(a.cwd) ? a.cwd : backend.root();
+    if (termKid) return out({ t: 'exit', error: 'Something is still running. Stop it first.' });
+    if (!cmd.trim() || !cwd) return out({ t: 'exit', code: 0 });
+    const win = process.platform === 'win32';
+    const env = { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0', TERM: 'dumb' }; delete env.ELECTRON_RUN_AS_NODE;
+    let kid;
+    try { kid = spawn(win ? 'chcp 65001>nul & ' + cmd : cmd, { cwd, shell: true, windowsHide: true, env, detached: !win, stdio: ['pipe', 'pipe', 'pipe'] }); }
+    catch (e) { return out({ t: 'exit', error: e.message }); }
+    termKid = kid;
+    for (const s of [kid.stdout, kid.stderr]) { s.setEncoding('utf8'); s.on('data', d => out({ t: 'out', text: d })); }
+    kid.stdin.on('error', () => {});
+    kid.on('error', e => { if (termKid === kid) termKid = null; out({ t: 'exit', error: e.message }); });
+    kid.on('close', code => { if (termKid === kid) termKid = null; out({ t: 'exit', code, stopped: !!kid.stopped }); });
+  });
+  ipcMain.on('term:in', (e, text) => { if (termKid) { try { termKid.stdin.write(String(text)); } catch (e2) { /* closed */ } } });
+  ipcMain.handle('term:stop', () => { termKill(); return { ok: true }; });
+  app.on('before-quit', termKill);
 
   // Real Windows drag: lets files be dropped on Explorer, the desktop, or a USB window too.
   ipcMain.on('drag', (event, paths) => {

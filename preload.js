@@ -11,6 +11,13 @@ contextBridge.exposeInMainWorld('fm', {
     set: p => ipcRenderer.invoke('root:set', p),
     choose: () => ipcRenderer.invoke('root:choose'),
   },
+  term: {
+    run: a => ipcRenderer.send('term:run', a),
+    input: t => ipcRenderer.send('term:in', t),
+    stop: () => ipcRenderer.invoke('term:stop'),
+    cd: a => ipcRenderer.invoke('term:cd', a),
+    onEvent: cb => ipcRenderer.on('term:event', (e, ev) => cb(ev)),
+  },
   claude: {
     status: () => ipcRenderer.invoke('claude:status'),
     login: () => ipcRenderer.invoke('claude:login'),

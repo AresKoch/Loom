@@ -241,6 +241,40 @@ body.dragging .droptip{display:block}
 #toast{position:fixed;bottom:46px;left:calc(50% - 134px);transform:translateX(-50%) translateY(8px);background:rgba(var(--float),.95);border:1px solid var(--a2);color:var(--fg);padding:8px 15px;border-radius:3px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;max-width:70vw;z-index:60;box-shadow:0 14px 40px rgba(0,0,0,.5)}
 #toast.on{opacity:1;transform:translateX(-50%)}
 #toast.bad{border-color:var(--red);color:var(--red)}
+/* ---------- settings: a roomy window over the app, sections down the left ---------- */
+#setv{position:fixed;inset:0;background:rgba(10,10,16,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:60}
+#setv.on{display:flex}
+#setbox{position:relative;display:flex;width:75vw;height:75vh;min-width:min(680px,96vw);min-height:min(460px,92vh);background:var(--solid);border:1px solid var(--line2);border-radius:6px;box-shadow:0 30px 80px rgba(0,0,0,var(--sh));overflow:hidden;font-family:"Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5}
+#setnav{flex:0 0 230px;background:var(--tile);border-right:1px solid var(--line);padding:26px 14px;display:flex;flex-direction:column;gap:4px;overflow:auto}
+#setnav .nh{font-size:12px;color:var(--dim);padding:0 12px 10px;font-weight:600}
+#setnav button{border:0;background:none;color:var(--mid);font:inherit;text-align:left;padding:10px 12px;border-radius:5px;cursor:pointer}
+#setnav button:hover{background:rgba(var(--ink),.07);color:var(--fg)}
+#setnav button.on{background:rgba(var(--acc),.22);color:var(--hi);font-weight:600}
+#setmain{flex:1;min-width:0;overflow:auto;padding:34px 44px 44px}
+#setmain h2{margin:0 0 6px;font-size:23px;color:var(--hi);font-weight:650}
+#setmain .lead{color:var(--dim);margin:0 0 30px}
+.sgroup{margin:0 0 34px;max-width:720px}
+.sgroup h3{margin:0 0 4px;font-size:16px;color:var(--fg);font-weight:600}
+.sgroup .sd{color:var(--dim);font-size:13.5px;margin:0 0 14px}
+.sopts{display:flex;flex-wrap:wrap;gap:10px}
+.sopt{border:1px solid var(--line2);background:rgba(var(--ink),.04);color:var(--fg);font:inherit;border-radius:6px;padding:12px 16px;cursor:pointer;text-align:left;min-width:150px}
+.sopt small{display:block;color:var(--dim);font-size:12.5px;margin-top:2px}
+.sopt:hover{border-color:var(--a1)}
+.sopt.on{border-color:var(--a1);background:rgba(var(--acc),.18);box-shadow:inset 0 0 0 1px var(--a1)}
+.sopt{position:relative;padding-right:38px}
+.sopt.on::after{content:"✓";position:absolute;top:10px;right:13px;color:var(--a1);font-weight:700}
+.sopt.on small{color:var(--mid)}
+.srow{display:flex;align-items:center;gap:18px;padding:14px 0;border-top:1px solid var(--line)}
+.srow:first-of-type{border-top:0}
+.srow .st{flex:1;min-width:0}.srow .st b{display:block;font-weight:600;color:var(--fg)}.srow .st span{color:var(--dim);font-size:13.5px}
+.stog{position:relative;flex:none;display:block;box-sizing:border-box;padding:0;width:46px;min-width:46px;height:26px;border-radius:13px !important;border:0;background:rgba(var(--ink),.2);position:relative;cursor:pointer;transition:background .15s}
+.stog::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--hi);transition:left .15s}
+.stog.on{background:var(--a1)}.stog.on::after{left:23px}
+.sbtn{border:1px solid var(--line2);background:rgba(var(--ink),.06);color:var(--fg);font:inherit;border-radius:6px;padding:9px 16px;cursor:pointer}
+.sbtn:hover{border-color:var(--a1)}.sbtn.pri{background:var(--a1);color:var(--on);border-color:transparent;font-weight:600}
+.spath{font-family:var(--fixed);font-size:13px;color:var(--mid);overflow-wrap:anywhere}
+#setx{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line2);background:none;color:var(--mid);font-size:20px;line-height:1;cursor:pointer}
+#setx:hover{color:var(--fg);border-color:var(--a1)}
 #veil{position:fixed;inset:0;background:rgba(10,10,16,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:70}
 #veil.on{display:flex}
 .dlg{background:var(--solid);border:1px solid var(--line2);border-radius:4px;box-shadow:0 30px 80px rgba(0,0,0,var(--sh));padding:20px 22px;width:460px;max-width:90vw}
@@ -695,6 +729,7 @@ body[data-tint="1"] #main>*{padding-top:14px}
 <div id="term"><div class="thead"><span class="tt">terminal</span><button id="tcwd" title="The folder commands run in. Click to switch to the folder you have open."></button><span class="sp"></span><button id="tstop">stop</button><button id="tclear">clear</button><button id="tclose" title="Hide. Ctrl+` brings it back. Anything running keeps running.">hide</button></div><pre id="termout"></pre><div class="tin"><span id="tprompt">&gt;</span><input id="tcmd" spellcheck="false" autocomplete="off" placeholder="type a command and press Enter"></div></div>
 <button id="tbtn" title="Terminal: run commands in the open folder. Ctrl+`">&gt;_ terminal</button>
 <div id="ver" title="Double click to open Loom on GitHub"></div><div id="marq"></div><div id="menu"></div><div id="toast"></div>
+<div id="setv"><div id="setbox"><nav id="setnav"></nav><div id="setmain"></div><button id="setx" title="Close. Esc does the same.">×</button></div></div>
 <div id="veil"><div class="dlg" id="dlg"></div></div>
 
 <script>
@@ -1585,6 +1620,7 @@ function kbMenu(){
 document.addEventListener('keydown', ev => {
   const k = ev.key, low = k.toLowerCase();
   if (ev.ctrlKey && low === 'c' && String(getSelection()).trim()) return;      // words are selected: let Windows copy them
+  if ($('setv').classList.contains('on')){ if (k === 'Escape'){ ev.preventDefault(); closeSettings(); } return; }
   if (ev.ctrlKey && k === '`'){ ev.preventDefault(); termToggle(); return; }
   if ($('veil').classList.contains('on')){          // a question is open: it takes the keys
     const bs = [...document.querySelectorAll('#dlg .btn')], i = bs.indexOf(document.activeElement);
@@ -2265,34 +2301,66 @@ function pick(btn, list, key){
 }
 // Settings: one line per setting. A line with ▸ opens the short list of choices for it, and
 // picking one comes straight back here, so the menu stays one screen tall however much is in it.
-function choiceMenu(x, y, title, opts, isOn, pick){
-  const items = [{head: title}];
-  for (const [v, name] of opts) items.push({label: (isOn(v) ? '✓  ' : '    ') + name, run: () => { pick(v); saveAll(); settingsMenu($('gset')); }});
-  items.push('-', {label: '‹  back to settings', run: () => settingsMenu($('gset'))});
-  menu(x, y, items);
+// Settings: a window over the app, with sections down the left and room to read on the right.
+let SETTAB = 'look';
+function closeSettings(){ $('setv').classList.remove('on'); hush(); }
+function openSettings(tab){
+  if (tab) SETTAB = tab;
+  closeMenu(); $('setv').classList.add('on');
+  const tabs = [['look', 'Appearance'], ['layout', 'Layout'], ['voice', 'Voice'], ['start', 'Start-up and folder'], ['acct', 'Claude account']];
+  const nav = $('setnav'); nav.textContent = ''; nav.append(el('div', 'nh', 'Settings'));
+  for (const [k, name] of tabs){ const b = el('button', k === SETTAB ? 'on' : '', name); b.onclick = () => openSettings(k); nav.append(b); }
+  const main = $('setmain'), top = main.dataset.tab === SETTAB ? main.scrollTop : 0; main.textContent = ''; main.dataset.tab = SETTAB;
+  const again = () => { saveAll(); openSettings(); };
+  const group = (title, desc) => { const g = el('div', 'sgroup'); g.append(el('h3', '', title)); if (desc) g.append(el('div', 'sd', desc)); main.append(g); return g; };
+  const choices = (g, opts, isOn, pick) => { const box = el('div', 'sopts'); for (const [v, name, sub] of opts){ const b = el('button', 'sopt' + (isOn(v) ? ' on' : ''), name); if (sub) b.append(el('small', '', sub)); b.onclick = () => { pick(v); again(); }; box.append(b); } g.append(box); };
+  const toggle = (g, title, desc, on, flip) => { const r = el('div', 'srow'), t = el('div', 'st'); t.append(el('b', '', title), el('span', '', desc)); const s = el('button', 'stog' + (on ? ' on' : '')); s.onclick = () => { flip(); again(); }; r.append(t, s); g.append(r); };
+  const head = (t, lead) => main.append(el('h2', '', t), el('div', 'lead', lead));
+  if (SETTAB === 'look'){
+    head('Appearance', 'How Loom looks. Changes apply straight away.');
+    let g = group('Theme', 'Claude stays orange and git stays green in every theme.');
+    choices(g, THEMES.filter(Array.isArray).map(t => [t[0], t[1], t[2]]), v => S.theme === v, v => { S.theme = v; applyTheme(); });
+    g = group('Pane colours');
+    toggle(g, 'Each pane in its own colour', 'Files, git and Claude each get their own accent so you can tell them apart at a glance.', S.tint !== false, () => { S.tint = S.tint === false; applyTheme(); });
+    g = group('Motion', 'How columns move when you go through folders.');
+    choices(g, [['full', 'Smooth', 'slide and fade'], ['quick', 'Quick', 'shorter'], ['off', 'Off', 'no motion']], v => (S.motion || 'full') === v, v => { S.motion = v; });
+  } else if (SETTAB === 'layout'){
+    head('Layout', 'Where things sit in the window.');
+    let g = group('List of chats');
+    choices(g, [['side', 'Down the side', 'a list next to the chat'], ['top', 'Across the top', 'tabs above the chat']], v => (S.chatsPos === 'top' ? 'top' : 'side') === v, v => { S.chatsPos = v; cBar(); });
+    g = group('Claude pane');
+    choices(g, [['right', 'On the right'], ['left', 'On the left']], v => (S.side === 'left' ? 'left' : 'right') === v, v => { S.side = v; afterPanes(); });
+  } else if (SETTAB === 'voice'){
+    head('Voice', 'Claude reading replies out loud. The mic button in the chat is separate: it uses Windows voice typing.');
+    let g = group('Read aloud');
+    toggle(g, 'Claude reads replies out loud', 'Each finished reply is spoken. Code blocks are skipped.', !!S.speak, () => { $('cvoice').click(); });
+    g = group('Speed');
+    choices(g, [[.9, 'Slower'], [1, 'Normal'], [1.2, 'Faster'], [1.45, 'Fast']], v => (S.rate || 1) === v, v => { S.rate = v; saveAll(); speak('This is the speed.'); });
+    g = group('Voice', 'These are the voices installed in Windows. Picking one plays a sample.');
+    const all = voices(), en = all.filter(v => /^en/i.test(v.lang)), list = (en.length ? en : all).slice(0, 24);
+    choices(g, [['', 'Windows default'], ...list.map(v => [v.name, v.name.replace(/^Microsoft /, '').replace(/ - .*/, ''), v.lang])], v => (S.voice || '') === v, v => { S.voice = v; saveAll(); speak(v ? 'This is how I sound.' : 'This is the default voice.'); });
+    if (!all.length) g.append(el('div', 'sd', 'No voices found on this PC.'));
+  } else if (SETTAB === 'start'){
+    head('Start-up and folder', 'What Loom opens on, and the folder everything lives under.');
+    let g = group('When Loom starts');
+    choices(g, [[true, 'The board', 'sticky notes and a jump into any project'], [false, 'Where I left off', 'the folder and panes from last time']], v => !!S.boardStart === v, v => { S.boardStart = v; });
+    g = group('Root folder', 'Everything you browse, every chat and the board belong to this folder. Chats follow it if you move it up or down.');
+    g.append(el('div', 'spath', HOME || 'none chosen'));
+    const b = el('button', 'sbtn', 'Change folder...'); b.style.marginTop = '12px'; b.onclick = async () => { await chooseRoot(); openSettings(); }; g.append(b);
+  } else {
+    const ac = C.acct || {};
+    head('Claude account', 'Loom uses the Claude Code already installed on this PC, with its own sign-in. No keys are stored in Loom.');
+    const g = group(!ac.found ? 'Claude Code is not installed on this PC' : ac.loggedIn ? 'Signed in' : 'Not signed in', !ac.found ? 'Install Claude Code, then restart Loom. The steps are in READ ME FIRST.' : ac.loggedIn ? (ac.email || '') + (ac.plan ? '  ·  ' + ac.plan + ' plan' : '') : 'Sign in to start chatting.');
+    const row = el('div', 'sopts');
+    if (ac.found){ const b = el('button', 'sbtn' + (ac.loggedIn ? '' : ' pri'), ac.loggedIn ? 'Sign in as someone else...' : 'Sign in to Claude...'); b.onclick = async () => { if (fm.claude.login){ await fm.claude.login(); toast('Finish signing in in the window that opened, then click Check again.'); } }; row.append(b); }
+    const c = el('button', 'sbtn', 'Check again'); c.onclick = async () => { await cStatus(); openSettings(); }; row.append(c); g.append(row);
+  }
+  main.scrollTop = top;
 }
-function settingsMenu(btn){
-  const r = btn.getBoundingClientRect(), a = C.acct || {};
-  const mx = Math.max(8, r.right - 320), my = r.bottom + 4;
-  const tick = on => (on ? '✓  ' : '    ');
-  const line = (name, now, title, opts, isOn, pick) => ({label: name + ':  ' + now + '  ▸', run: () => choiceMenu(mx, my, title, opts, isOn, pick)});
-  const items = [{head: !a.found ? 'Claude Code is not installed on this PC' : a.loggedIn ? (a.email || 'signed in') + (a.plan ? '  ·  ' + a.plan + ' plan' : '') : 'not signed in'}];
-  if (a.found) items.push({label: a.loggedIn ? 'Sign in as someone else...' : 'Sign in to Claude...', strong: !a.loggedIn, run: async () => {
-    if (fm.claude.login){ await fm.claude.login(); toast('Finish signing in in the window that opened, then click Check again in settings.'); } }});
-  items.push({label: 'Check again', run: cStatus}, '-');
-  items.push({label: 'Theme:  ' + themeName() + '  ▸', run: () => themeMenu(mx, my)});       // this list stays open so several can be tried
-  items.push({label: tick(S.tint !== false) + 'Each pane in its own colour', run: () => { S.tint = S.tint === false; applyTheme(); saveAll(); settingsMenu(btn); }});
-  items.push(line('Motion', {full: 'smooth', quick: 'quick', off: 'off'}[S.motion] || 'smooth', 'motion when you move through folders', [['full', 'Smooth'], ['quick', 'Quick'], ['off', 'Off']], v => (S.motion || 'full') === v, v => { S.motion = v; }));
-  items.push('-');
-  items.push(line('Chats', S.chatsPos === 'top' ? 'tabs across the top' : 'list down the side', 'where the list of chats goes', [['side', 'List down the side'], ['top', 'Tabs across the top']], v => S.chatsPos === v, v => { S.chatsPos = v; cBar(); }));
-  items.push(line('Claude sits', S.side === 'left' ? 'on the left' : 'on the right', 'which side claude sits on', [['right', 'On the right'], ['left', 'On the left']], v => S.side === v, v => { S.side = v; afterPanes(); }));
-  items.push({label: tick(S.speak) + 'Claude reads replies out loud', run: () => { $('cvoice').click(); }});
-  items.push({label: 'Voice and speed  ▸', run: () => voiceMenu(mx, my)});
-  items.push('-');
-  items.push(line('When Loom starts', S.boardStart ? 'the board' : 'where I left off', 'when loom starts', [[true, 'Open on the board'], [false, 'Open where I left off']], v => !!S.boardStart === v, v => { S.boardStart = v; }));
-  items.push({label: 'Root folder:  ' + (HOME ? baseName(HOME) : 'none chosen') + '  ...', run: chooseRoot});
-  menu(mx, my, items);
-}
+$('setx').onclick = closeSettings;
+$('setv').addEventListener('mousedown', ev => { if (ev.target === $('setv')) closeSettings(); });
+$('setv').addEventListener('keydown', ev => ev.stopPropagation());
+$('setv').addEventListener('contextmenu', ev => { ev.preventDefault(); ev.stopPropagation(); });
 
 // Left click: that pane on its own, filling the window. Right click: add it to, or take it off, what is showing.
 function soloPane(v){ if (v !== 'claude') KF = v; setPanes({[v]: true}); if (v === 'claude' && !boardOpen()) $('cin').focus(); }
@@ -2301,7 +2369,7 @@ $('csend').onclick = () => cSend(true);
 $('cmode').onclick = ev => { const m = ev.target.dataset.m; if (m){ S.mode = m; cBar(); saveAll(); $('cin').focus(); } };
 $('cmodel').onclick = ev => pick(ev.currentTarget, MODELS, 'model');
 $('ceffort').onclick = ev => pick(ev.currentTarget, EFFORTS, 'effort');
-$('gset').onclick = ev => settingsMenu(ev.currentTarget);
+$('gset').onclick = () => openSettings();
 // The phone link: Claude Code's Remote Control, started in the root folder.
 async function phoneLink(){
   if (!HOME) return toast('Choose a root folder first.');
@@ -2724,7 +2792,7 @@ $('rootbtn').onclick = ev => rootMenu(ev.currentTarget);
 // ---------- themes ----------
 // Kept on this PC with the other layout settings. '' is Ember, the look the app shipped with.
 const THEMES = [
-  {head: 'original'}, ['', 'Ember', 'dusty charcoal and orange'], ['paper', 'Paper', 'Ember in daylight'],
+  {head: 'original'}, ['', 'Ember', 'dusty charcoal and purple'], ['paper', 'Paper', 'Ember in daylight'],
   {head: 'plain'}, ['graphite', 'Graphite', 'flat dark, no grain'], ['chalk', 'Chalk', 'flat light, no grain'],
   {head: 'vibe'}, ['nightcity', 'Night City', 'navy and red, heavy grain'], ['synth', 'Synth', 'pink and cyan on deep purple'],
 ];
