@@ -515,8 +515,13 @@ body[data-board="1"] #crumbs{visibility:hidden}
 #cvoice.talking{animation:hot 1.25s ease-in-out infinite}
 .handoff{max-height:56vh;overflow:auto;margin:8px 0 16px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--code);color:var(--mid);user-select:text;line-height:1.6;font-size:12.5px}
 .dlg:has(.handoff){width:720px}
-#hotclear{position:absolute;top:8px;right:18px;z-index:8;border:1px solid rgba(var(--acc),.6);background:rgba(var(--float),.94);color:var(--hi);font:inherit;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border-radius:20px;padding:4px 12px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,calc(var(--sh)*.6))}
-#hotclear:hover{background:var(--a1);color:var(--on)}
+#hotclear{position:absolute;top:8px;right:18px;z-index:8;display:flex;align-items:center;gap:4px;border:1px solid rgba(var(--acc),.6);background:rgba(var(--float),.94);color:var(--hi);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border-radius:20px;padding:3px 4px 3px 12px;box-shadow:0 6px 18px rgba(0,0,0,calc(var(--sh)*.6))}
+#hotclear button{border:0;background:rgba(var(--ink),.1);color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;border-radius:14px;padding:3px 10px;cursor:pointer}
+#hotclear button:hover{background:var(--a1);color:var(--on)}
+#hotlabel{margin-right:6px}
+/* a parent column squeezed narrow: give the room to the name, not the count */
+.col.anc{container-type:inline-size}
+@container (max-width:150px){.col.anc .node{padding:0 6px;gap:6px}.col.anc .node .nc,.col.anc .node .ch{display:none}}
 #ver{position:fixed;right:0;bottom:0;height:30px;line-height:30px;padding:0 12px 0 22px;font-size:10.5px;letter-spacing:.06em;color:color-mix(in srgb,var(--dim) 70%,transparent);background:linear-gradient(90deg,transparent,var(--bg) 16px);z-index:35;cursor:default;user-select:none}
 #ver:hover{color:var(--mid)}
 #keys{padding-right:74px}
@@ -542,7 +547,7 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
 <div id="stage">
   <div id="cols"></div>
   <svg id="wires"></svg>
-  <button id="hotclear" style="display:none" title="Stop the pulsing for everything Claude saved. Esc does the same. Right click a pulsing folder to clear just that one."></button>
+  <div id="hotclear" style="display:none"><span id="hotlabel"></span><button id="hotgo" title="Jump to the new save nearest the root folder. Click again for the next one.">take me there</button><button id="hotx" title="Stop the pulsing for everything Claude saved. Esc does the same. Right click a pulsing folder to clear just that one.">clear</button></div>
 </div>
 <aside id="claude"><div class="grip" data-p="claude" title="Drag to resize. Double click to reset."></div><div class="cin">
   <div class="chead">
@@ -1354,7 +1359,7 @@ document.addEventListener('contextmenu', ev => {
     const items = [{head: one ? files[0].name : plural(files.length, 'file') + ' selected'}];
     if (one) items.push({label: 'Open', strong: true, run: () => call('open', {path: paths[0]}).catch(fail)});
     if (one) items.push({label: 'Show in File Explorer', run: () => call('reveal', {path: paths[0]}).catch(fail)});
-    if (paths.some(isHot)) items.push({label: 'Stop the pulse', run: () => paths.forEach(clearHot)});
+    if (paths.some(isHot)) items.splice(1, 0, {label: 'Dismiss the pulse', run: () => paths.forEach(clearHot)});
     items.push('-', {label: 'Cut    ctrl+x', run: () => clipPaths(paths, true)}, {label: 'Copy    ctrl+c', run: () => clipPaths(paths, false)});
     if (clip.paths.length) items.push({label: 'Paste here    ctrl+v', run: () => paste()});
     items.push('-');
@@ -1371,7 +1376,7 @@ document.addEventListener('contextmenu', ev => {
     const name = dirPath.replace(/\\$/, '').split('\\').pop();
     const items = [{head: name}, {label: 'Open', strong: true, run: () => go(dirPath)},
       {label: 'Open in File Explorer', run: () => call('reveal', {path: dirPath}).catch(fail)}];
-    if (isHot(dirPath)) items.push({label: 'Stop the pulse here', run: () => clearHot(dirPath)});
+    if (isHot(dirPath)){ const n = hotUnder(dirPath).length; items.splice(1, 0, {label: n > 1 ? 'Take me to the nearest of ' + n + ' new saves' : 'Take me to the new save', strong: true, run: () => goHot(dirPath)}, {label: n > 1 ? 'Dismiss these ' + n : 'Dismiss', run: () => clearHot(dirPath)}, '-'); }
     if (!drop) items.push('-', {label: 'Cut', run: () => clipPaths([dirPath], true)}, {label: 'Copy', run: () => clipPaths([dirPath], false)});
     if (clip.paths.length) items.push({label: 'Paste into ' + name, run: () => paste(dirPath)});
     if (!drop) items.push('-', {label: 'Rename', run: () => renamePath(dirPath)}, {label: 'Delete', run: () => deleteItems([dirPath])});
@@ -1843,13 +1848,26 @@ function clearHot(p){
   else { const k = winPath(p).toLowerCase(); for (const t of [...touched.keys()]) if (t === k || t.startsWith(k + '\\')) touched.delete(t); }
   drawWires();
 }
+// The new saves under a folder (or anywhere), nearest to the root first, so the first jump lands
+// highest up and the rest are a short drive further down. Ones not looked at yet come before ones that were.
+function hotUnder(p){
+  const k = p == null ? null : winPath(p).toLowerCase();
+  return [...touched.entries()].filter(([t]) => k == null || t === k || t.startsWith(k + '\\')).map(([, v]) => v)
+    .sort((a, b) => (!!a.seen - !!b.seen) || (a.path.split('\\').length - b.path.split('\\').length) || (b.at - a.at));
+}
+async function goHot(p){
+  const list = hotUnder(p); if (!list.length) return toast('Nothing new here.');
+  const left = list.filter(t => !t.seen).length - (list[0].seen ? 0 : 1);
+  await reveal(list[0].path);
+  if (left > 0) toast(plural(left, 'more new save') + ' further in. Use the chip at the top right to go to the next one.');
+}
 function paintHot(){
   const now = Date.now();
   for (const [k, t] of touched) if (now - t.at > 600000 || (t.seen && now - t.seen > 20000)) touched.delete(k);
   const keys = [...touched.keys()];
   const chip = $('hotclear'), waiting = keys.filter(k => !touched.get(k).seen).length;
   chip.style.display = keys.length ? '' : 'none';
-  if (keys.length) chip.textContent = (waiting ? plural(waiting, 'new save') : 'saves found') + '  ·  clear';
+  if (keys.length){ $('hotlabel').textContent = waiting ? plural(waiting, 'new save') : 'saves found'; $('hotgo').style.display = waiting ? '' : 'none'; }
   for (const e of document.querySelectorAll('#cols [data-path]')){
     const p = winPath(e.dataset.path).toLowerCase(), isFile = e.classList.contains('row');
     const hot = keys.some(k => k === p || (!isFile && k.startsWith(p + '\\')));
@@ -2068,7 +2086,8 @@ async function syncNow(){
   }
 }
 $('hsync').onclick = syncNow;
-$('hotclear').onclick = () => { clearHot(); toast('Cleared.'); };
+$('hotx').onclick = () => { clearHot(); toast('Cleared.'); };
+$('hotgo').onclick = () => goHot(null);
 $('cin').addEventListener('keydown', ev => {
   if (!appKey(ev)){
     if (ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); cSend(); }
