@@ -18,6 +18,7 @@ Get **Loom-windows.zip** from the [latest release](../../releases/latest), unzip
 - **Files.** Pick a root folder. Hover a folder to look inside, or a file to preview it (text, code, PDF, pictures, SolidWorks parts). Copy, cut, paste, rename, drag to a USB drive, print.
 - **Claude.** Runs the Claude Code already installed on your PC, signed in with your own account. Three modes: look (read only), edit (may change files in the root folder), auto (may also run commands Claude Code judges safe).
 - **Talk and listen.** The mic button opens Windows voice typing in the Claude box, and "voice on" has Claude read its replies out loud. Pick the voice and speed in Settings.
+- **Phone.** The phone button starts Claude Code's Remote Control in your root folder, so you can keep working in the same folders from the Code tab of the Claude app on your phone. The PC has to stay on.
 - **Follow the save.** When Claude writes a file, every folder on the way to it pulses in the tree and so does the wire. Click the "Writing ..." line in the chat to jump to the file.
 - **Git.** Changes with tick boxes and diffs, history, branches, and one fetch / pull / push button. Push always asks first. Discard moves the old copy to a trash folder instead of destroying it.
 - **Panes.** Files, git and Claude are switches. Click to show any two or all three, right click one to fill the window with just that pane, and drag the bar between panes to resize. Folder columns size themselves to fit their names, and the preview takes the rest.

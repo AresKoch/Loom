@@ -249,7 +249,7 @@ body.dragging .droptip{display:block}
 #veil.on{display:flex}
 .dlg{background:var(--solid);border:1px solid var(--line2);border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,var(--sh));padding:20px 22px;width:460px;max-width:90vw}
 .dlg h3{margin:0 0 8px;font-size:15px}
-.dlg ul{margin:6px 0 16px;padding-left:18px;max-height:160px;overflow:auto;color:var(--mid);user-select:text}
+.dlg ul{margin:6px 0 16px;padding-left:18px;max-height:300px;line-height:1.6;overflow:auto;color:var(--mid);user-select:text}
 .dlg .btns{display:flex;gap:8px;justify-content:flex-end}
 .btn{border:1px solid var(--line2);background:rgba(var(--ink),.05);border-radius:8px;padding:6px 14px;cursor:pointer}
 .btn:hover{border-color:var(--a1);color:var(--cyan)}
@@ -311,7 +311,8 @@ body:not([data-solo=files]) #cols{gap:22px}
 #viewseg{-webkit-app-region:no-drag}
 #viewseg button{padding:7px 17px;font-size:12px;letter-spacing:.1em}
 #viewseg{border-radius:9px}
-#bbtn,#gset{padding:7px 13px;font-size:11.5px}
+#bbtn,#gset,#gphone{padding:7px 13px;font-size:11.5px}
+#gphone{-webkit-app-region:no-drag}
 
 /* claude pane */
 .cin{border-width:1px}
@@ -527,6 +528,7 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
   <div class="searchwrap"><input id="q" placeholder="find any folder or file" autocomplete="off" spellcheck="false"><div id="results"></div></div>
   <button class="cbtn" id="bbtn" title="The board: sticky notes and a jump into any project. Ctrl+B.">board</button>
   <span class="seg" id="viewseg" title="Click to show or hide a pane. Right click to show only that one. Ctrl+G is git, Ctrl+J is Claude."><button data-v="files">files</button><button data-v="git">git</button><button data-v="claude">claude</button></span>
+  <button class="cbtn" id="gphone" title="Work in this root folder from your phone, through the Code tab of the Claude app.">phone</button>
   <button class="cbtn" id="gset" title="Account, theme, layout and root folder">settings</button>
   <span id="clock"></span>
 </div>
@@ -1985,6 +1987,22 @@ $('cmode').onclick = ev => { const m = ev.target.dataset.m; if (m){ S.mode = m; 
 $('cmodel').onclick = ev => pick(ev.currentTarget, MODELS, 'model');
 $('ceffort').onclick = ev => pick(ev.currentTarget, EFFORTS, 'effort');
 $('gset').onclick = ev => settingsMenu(ev.currentTarget);
+// The phone link: Claude Code's Remote Control, started in the root folder.
+async function phoneLink(){
+  if (!HOME) return toast('Choose a root folder first.');
+  const go2 = await ask('Work in ' + baseName(HOME) + ' from your phone?', [
+    'A console window opens and links this PC to the Claude app on your phone.',
+    'The first time, it asks two questions. Answer y to both.',
+    'On your phone: Claude app, Code tab, pick the session named "Loom ' + baseName(HOME) + '". Or press the space bar in the console window and scan the QR code.',
+    'Claude works here on this PC, in this root folder, so files it changes show up in Loom.',
+    'Keep that window open and the PC awake. Closing the window ends the link.',
+  ], [['Cancel', null], ['Start phone link', true, true]]);
+  if (!go2) return;
+  const r = fm.claude.remote ? await fm.claude.remote() : {ok: false, error: 'Not available here.'};
+  if (!r.ok) return toast(r.error, true);
+  toast('Phone link window opened. Look for "' + r.name + '" in the Code tab of the Claude app.');
+}
+$('gphone').onclick = phoneLink;
 $('cin').addEventListener('keydown', ev => {
   if (!appKey(ev)){
     if (ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); cSend(); }

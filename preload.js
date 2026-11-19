@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('fm', {
   claude: {
     status: () => ipcRenderer.invoke('claude:status'),
     login: () => ipcRenderer.invoke('claude:login'),
+    remote: () => ipcRenderer.invoke('claude:remote'),
     send: msg => ipcRenderer.send('claude:send', msg),
     stop: () => ipcRenderer.invoke('claude:stop'),
     onEvent: cb => ipcRenderer.on('claude:event', (e, ev) => cb(ev)),

@@ -51,6 +51,10 @@ USING IT
   typing. Same as pressing the Windows key and H. VOICE ON / OFF at the top of
   the Claude pane makes Claude read its replies out loud. Voice and speed are
   under SETTINGS.
+- PHONE at the top links this PC to the Claude app on your phone. A console
+  window opens; the first time, answer y to its two questions. Then open the
+  Code tab in the Claude app and pick the session named "Loom ...". Keep the
+  window open and the PC awake while you use it.
 - When Claude saves a file, the folders on the way to it pulse in the tree.
   Click the "Writing ..." line in the chat to jump straight to the file.
 - Git: tick files, type a summary, Commit. The third button at the top of the

@@ -171,6 +171,21 @@ function create({ getRoot, claudePath }) {
     return { ok: true };
   }
 
+  // The phone link. Starts Claude Code's Remote Control server in the root folder, in its own
+  // console window, so the person can answer its first-time questions and show the QR code
+  // (space bar). Their phone then drives Claude Code on this PC from the Code tab of the Claude app.
+  // Loom only opens the window: the link itself, and the sign in, are Claude Code's own.
+  function remote() {
+    const exe = findClaude(claudePath), root = getRoot();
+    if (!exe) return { ok: false, error: 'Claude Code is not installed on this PC. See the README for the one line that installs it.' };
+    if (!root) return { ok: false, error: 'Choose a root folder first.' };
+    if (process.platform !== 'win32') return { ok: false, error: 'The phone link opens a Windows console, so it only works on Windows.' };
+    const name = 'Loom ' + (path.basename(root) || 'root').replace(/[^\w .-]/g, '').slice(0, 40);
+    spawn('cmd.exe', ['/c', 'start', 'Loom phone link', '/d', root, 'cmd', '/k', exe, 'remote-control', '--name', name],
+      { detached: true, stdio: 'ignore', windowsHide: false }).unref();
+    return { ok: true, name, folder: root };
+  }
+
   // Send one message. emit() gets: init, turn, text, tool, toolresult, usage, done.
   function send({ prompt, sessionId, mode, model, effort, folder, selected, history }, emit) {
     const root = getRoot();
@@ -259,7 +274,7 @@ function create({ getRoot, claudePath }) {
     return { ok: true };
   }
 
-  return { status, login, send, stop, busy: () => !!child };
+  return { status, login, remote, send, stop, busy: () => !!child };
 }
 
 module.exports = { create, launch, cmdQuote, shimTarget };

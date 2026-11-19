@@ -210,6 +210,7 @@ app.whenReady().then(() => {
   ipcMain.handle('claude:status', () => claude.status());
   ipcMain.handle('claude:stop', () => claude.stop());
   ipcMain.handle('claude:login', () => claude.login());
+  ipcMain.handle('claude:remote', () => claude.remote());
   ipcMain.on('claude:send', (event, msg) => {
     const out = ev => { if (!event.sender.isDestroyed()) event.sender.send('claude:event', ev); };
     msg = msg || {};
