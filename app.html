@@ -507,6 +507,9 @@ body[data-board="1"] #crumbs{visibility:hidden}
 .props{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;margin:10px 0 18px;user-select:text}
 .props span:nth-child(odd){color:var(--dim)}
 .props span:nth-child(even){overflow-wrap:anywhere}
+#ver{position:fixed;right:0;bottom:0;height:30px;line-height:30px;padding:0 12px 0 22px;font-size:10.5px;letter-spacing:.06em;color:var(--dim);opacity:.6;background:linear-gradient(90deg,transparent,rgb(var(--bar)) 16px);z-index:35;cursor:default;user-select:none}
+#ver:hover{opacity:1;color:var(--mid)}
+#keys{padding-right:74px}
 #keys .bk{display:none}
 body[data-board="1"] #keys>span:not(.r):not(.bk){display:none}
 body[data-board="1"] #keys>span.bk:not(.r){display:inline}
@@ -597,7 +600,7 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
   <span class="bk"><kbd>double click</kbd>new note</span><span class="bk"><kbd>n</kbd>new note</span><span class="bk"><kbd>/</kbd>tag a folder</span><span class="bk"><kbd>click a tag</kbd>jump in</span><span class="bk"><kbd>ctrl</kbd><kbd>z</kbd>bring back a removed note</span><span class="bk"><kbd>esc</kbd>go to workspace</span><span class="bk"><kbd>ctrl</kbd><kbd>b</kbd>board</span>
   <span class="r" id="status"></span>
 </div>
-<div id="marq"></div><div id="menu"></div><div id="toast"></div>
+<div id="ver" title="Double click to open Loom on GitHub"></div><div id="marq"></div><div id="menu"></div><div id="toast"></div>
 <div id="veil"><div class="dlg" id="dlg"></div></div>
 
 <script>
@@ -2586,6 +2589,8 @@ addEventListener('resize', () => { applyPanes(); alignCols(); drawWires(); });
 addEventListener('focus', () => { if (cur) go(cur.path, {noHistory: true}); pollDrives(); if (shown('git')) gitRefresh(); });
 (async function start(){
   applyTheme();
+  call('appInfo').then(r => { $('ver').textContent = 'v' + r.version; }).catch(() => {});
+  $('ver').ondblclick = () => call('openRepo').then(() => toast('Opened Loom on GitHub.')).catch(fail);
   if (S.boardStart) document.body.dataset.board = '1';      // no flash of the workspace before the board
   tick(); setInterval(tick, 15000);
   cBar(); drawUsage(); cStatus();

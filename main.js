@@ -150,6 +150,8 @@ app.whenReady().then(() => {
     boardGet: a => backend.boardGet(a),
     boardSave: a => backend.boardSave(a),
     zip: a => backend.zip(a),
+    appInfo: () => ({ version: app.getVersion() }),
+    openRepo: async () => { await shell.openExternal('https://github.com/AresKoch/Loom/releases'); return { ok: true }; },
     props: a => backend.props(a),
     // A picture of the file from Windows itself: the same thumbnail Explorer shows
     // (SolidWorks parts, drawings, images, Office files with a saved preview).
