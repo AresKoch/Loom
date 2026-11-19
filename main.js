@@ -68,8 +68,8 @@ function dragIcon() {
 function createWindow() {
   win = new BrowserWindow({
     width: 1500, height: 950, minWidth: 900, minHeight: 600,
-    title: 'Loom', backgroundColor: (settings.look || {}).bg || '#0e0d0c', autoHideMenuBar: true, show: false,
-    titleBarStyle: 'hidden', titleBarOverlay: { color: (settings.look || {}).bg || '#0e0d0c', symbolColor: (settings.look || {}).fg || '#ebe3d3', height: 44 },
+    title: 'Loom', backgroundColor: (settings.look || {}).bg || '#0d0d0c', autoHideMenuBar: true, show: false,
+    titleBarStyle: 'hidden', titleBarOverlay: { color: (settings.look || {}).bg || '#0d0d0c', symbolColor: (settings.look || {}).fg || '#ebe3d3', height: 44 },
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false, plugins: true },
   });
   Menu.setApplicationMenu(null);
