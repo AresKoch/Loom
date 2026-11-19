@@ -50,7 +50,8 @@ USING IT
 - MIC (next to SEND) opens Windows voice typing so you can talk instead of
   typing. Same as pressing the Windows key and H. VOICE ON / OFF at the top of
   the Claude pane makes Claude read its replies out loud. Voice and speed are
-  under SETTINGS.
+  under SETTINGS. The natural voices there sound much better than the
+  Windows ones. Each is a one-time download of about 63 MB.
 - SYNC at the top writes a handoff of what you did since the last sync and
   sends it to a private GitHub repository of your own (it asks for the address
   the first time). On your phone, open that repository in the Claude app's

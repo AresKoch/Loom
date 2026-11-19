@@ -47,8 +47,10 @@ function startRoot() {
 }
 function rootInfo() { return { root: backend.root(), recents: settings.recents.filter(p => p !== backend.root()).slice(0, 8) }; }
 async function useRoot(p) {
+  const before = backend.root();
   await backend.setRoot({ path: p });
   const r = backend.root();
+  try { await backend.adoptChats({ into: r, from: [before, ...settings.recents] }); } catch (e) { /* chats stay where they were */ }
   settings.root = r;
   settings.recents = [r, ...settings.recents.filter(x => x.toLowerCase() !== r.toLowerCase())].slice(0, 10);
   saveSettings();
@@ -68,7 +70,7 @@ function dragIcon() {
 function createWindow() {
   win = new BrowserWindow({
     width: 1500, height: 950, minWidth: 900, minHeight: 600,
-    title: 'Loom', backgroundColor: (settings.look || {}).bg || '#0d0d0c', autoHideMenuBar: true, show: false,
+    title: 'Loom', icon: path.join(__dirname, 'icon.png'), backgroundColor: (settings.look || {}).bg || '#0d0d0c', autoHideMenuBar: true, show: false,
     titleBarStyle: 'hidden', titleBarOverlay: { color: (settings.look || {}).bg || '#0d0d0c', symbolColor: (settings.look || {}).fg || '#ebe3d3', height: 44 },
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false, plugins: true },
   });
@@ -107,6 +109,7 @@ app.whenReady().then(() => {
   loadSettings();
   backend = create({ workspace: startRoot(), fakeUsb: process.env.FOLDERMAP_FAKE_USB || null });
   backend.startIndexing();
+  if (backend.root()) backend.adoptChats({ into: backend.root(), from: settings.recents }).catch(() => {});   // chats left in a deeper or higher root come along
 
   const git = gitLib.create({ check: p => backend.check(p), root: () => backend.root(), Problem });
   const sync = syncLib.create({ root: () => backend.root(), Problem });
@@ -217,16 +220,17 @@ app.whenReady().then(() => {
   // Claude: replies stream back to the window as they are written.
   const claude = claudeLib.create({ getRoot: () => backend.root() });
   ipcMain.handle('claude:status', () => claude.status());
-  ipcMain.handle('claude:stop', () => claude.stop());
+  ipcMain.handle('claude:stop', (e, id) => claude.stop(typeof id === 'string' ? id : null));
   ipcMain.handle('claude:login', () => claude.login());
   ipcMain.handle('claude:remote', () => claude.remote());
   ipcMain.on('claude:send', (event, msg) => {
-    const out = ev => { if (!event.sender.isDestroyed()) event.sender.send('claude:event', ev); };
     msg = msg || {};
+    const chatId = typeof msg.chatId === 'string' ? msg.chatId.slice(0, 40) : null;
+    const out = ev => { if (!event.sender.isDestroyed()) event.sender.send('claude:event', { ...ev, chatId }); };
     let folder = null, selected = [];
     try { folder = msg.folder ? backend.check(msg.folder) : null; } catch (e) { /* outside: leave out */ }
     for (const p of Array.isArray(msg.selected) ? msg.selected : []) { try { selected.push(backend.check(p)); } catch (e) { /* skip */ } }
-    claude.send({ prompt: String(msg.prompt || ''), sessionId: typeof msg.sessionId === 'string' ? msg.sessionId : null,
+    claude.send({ chatId, prompt: String(msg.prompt || ''), sessionId: typeof msg.sessionId === 'string' ? msg.sessionId : null,
       mode: msg.mode, model: msg.model, effort: msg.effort, folder, selected,
       history: typeof msg.history === 'string' ? msg.history.slice(0, 40000) : null }, out);
   });

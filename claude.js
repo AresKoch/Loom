@@ -149,7 +149,8 @@ function toolLine(name, input) {
 
 // getRoot() returns the folder Claude works from (the app's current root folder).
 function create({ getRoot, claudePath }) {
-  let child = null;
+  const kids = new Map();                 // chat id -> the Claude process answering in that chat
+  const reported = new Map();             // saved file -> when it was reported, so two chats do not both claim it
 
   function status() {
     const exe = findClaude(claudePath);
@@ -188,9 +189,10 @@ function create({ getRoot, claudePath }) {
   }
 
   // Send one message. emit() gets: init, turn, text, tool, toolresult, usage, done.
-  function send({ prompt, sessionId, mode, model, effort, folder, selected, history }, emit) {
+  function send({ chatId, prompt, sessionId, mode, model, effort, folder, selected, history }, emit) {
     const root = getRoot();
-    if (child) { emit({ t: 'done', error: 'Claude is still working on the last message.' }); return; }
+    const key = String(chatId || '_');
+    if (kids.has(key)) { emit({ t: 'done', error: 'Claude is still working on the last message in this chat.' }); return; }
     if (!root) { emit({ t: 'done', error: 'Choose a root folder first.' }); return; }
     const exe = findClaude(claudePath);
     if (!exe) {
@@ -215,8 +217,8 @@ function create({ getRoot, claudePath }) {
     const env = { ...process.env };
     delete env.ELECTRON_RUN_AS_NODE;
     const how = launch(exe, args);
-    child = spawn(how.file, how.args, { cwd: root, windowsHide: true, env, stdio: ['pipe', 'pipe', 'pipe'], ...how.options });
-    const me = child;
+    const me = spawn(how.file, how.args, { cwd: root, windowsHide: true, env, stdio: ['pipe', 'pipe', 'pipe'], ...how.options });
+    kids.set(key, me);
     let buf = '', errText = '', finished = false, session = sessionId || null, sawText = false;
 
     // Files saved this turn, found two ways so a save is never missed: the Write/Edit tool calls,
@@ -232,8 +234,10 @@ function create({ getRoot, claudePath }) {
         timers.set(full, setTimeout(() => {
           timers.delete(full);
           fs.stat(full, (err, st) => {
-            if (err || !st.isFile() || st.mtimeMs < started - 2000 || known.has(full.toLowerCase())) return;
-            known.add(full.toLowerCase()); emit({ t: 'saved', path: full });
+            const lc = full.toLowerCase();
+            if (err || !st.isFile() || st.mtimeMs < started - 2000 || known.has(lc) || Date.now() - (reported.get(lc) || 0) < 4000) return;
+            if (reported.size > 500) reported.clear();
+            known.add(lc); reported.set(lc, Date.now()); emit({ t: 'saved', path: full });
           });
         }, 400));
       });
@@ -245,7 +249,7 @@ function create({ getRoot, claudePath }) {
       for (const [id, p] of pending) { try { if (fs.statSync(p).mtimeMs >= started - 2000) emit({ t: 'toolresult', id, error: false }); } catch (e) { /* not there */ } }
       pending.clear(); finished = true; try { if (watcher) watcher.close(); } catch (e) { /* closed */ }
       for (const t of timers.values()) clearTimeout(t);
-      if (child === me) child = null; emit({ t: 'done', session, ...ev });
+      if (kids.get(key) === me) kids.delete(key); emit({ t: 'done', session, ...ev });
     };
     const line = raw => {
       let m; try { m = JSON.parse(raw); } catch (e) { return; }
@@ -267,7 +271,7 @@ function create({ getRoot, claudePath }) {
           // For a tool that saves a file, pass the path along so the window can show where it went.
           const inp = b.input || {}, write = WRITERS.has(b.name), fp = write ? (inp.file_path || inp.notebook_path) : null;
           const abs = fp ? path.resolve(root, String(fp)) : null;
-          if (write && abs){ pending.set(b.id, abs); known.add(abs.toLowerCase()); }
+          if (write && abs){ pending.set(b.id, abs); known.add(abs.toLowerCase()); reported.set(abs.toLowerCase(), Date.now()); }
           emit({ t: 'tool', id: b.id, line: toolLine(b.name, inp), write: write && !!fp, path: abs });
         }
       }
@@ -297,14 +301,17 @@ function create({ getRoot, claudePath }) {
     me.stdin.end(earlier + context + String(prompt || ''));
   }
 
-  function stop() {
-    if (!child) return { ok: true };
-    child.stopped = true;
-    try { execFile('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true }, () => {}); } catch (e) { try { child.kill(); } catch (e2) { /* gone */ } }
+  // Stop the reply in one chat, or every reply when no chat is named (closing the app).
+  function stop(chatId) {
+    for (const [key, kid] of [...kids]) {
+      if (chatId != null && key !== String(chatId)) continue;
+      kid.stopped = true;
+      try { execFile('taskkill', ['/pid', String(kid.pid), '/T', '/F'], { windowsHide: true }, () => {}); } catch (e) { try { kid.kill(); } catch (e2) { /* gone */ } }
+    }
     return { ok: true };
   }
 
-  return { status, login, remote, send, stop, busy: () => !!child };
+  return { status, login, remote, send, stop, busy: () => kids.size > 0 };
 }
 
 module.exports = { create, launch, cmdQuote, shimTarget, findClaude, MODES };
