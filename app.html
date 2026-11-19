@@ -563,7 +563,7 @@ body[data-tint="1"] #main>*{padding-top:14px}
   <div id="crumbs"></div>
   <div class="searchwrap"><input id="q" placeholder="find any folder or file" autocomplete="off" spellcheck="false"><div id="results"></div></div>
   <button class="cbtn" id="bbtn" title="The board: sticky notes and a jump into any project. Ctrl+B.">board</button>
-  <span class="seg" id="viewseg" title="Click to show or hide a pane. Right click to show only that one. Ctrl+G is git, Ctrl+J is Claude."><button data-v="files">files</button><button data-v="git">git</button><button data-v="claude">claude</button></span>
+  <span class="seg" id="viewseg" title="Click for that pane on its own. Right click to add or remove a pane beside the others. Ctrl+G is git, Ctrl+J is Claude."><button data-v="files">files</button><button data-v="git">git</button><button data-v="claude">claude</button></span>
   <button class="cbtn" id="hsync" title="Write down what happened since the last sync and send it to your private sync repository, so Claude on your phone can pick up where you left off.">sync</button>
   <button class="cbtn" id="gphone" title="Work in this root folder from your phone, through the Code tab of the Claude app.">phone</button>
   <button class="cbtn" id="gset" title="Account, theme, layout and root folder">settings</button>
@@ -1368,10 +1368,11 @@ let menuByKeys = false;
 document.addEventListener('contextmenu', ev => {
   ev.preventDefault();
   const vb = ev.target.closest('#viewseg button, #bwith button');
-  if (vb){                                              // right click a pane switch: only that pane, filling the window
-    closeMenu(); if (boardOpen() && vb.closest('#viewseg')) closeBoard();
-    if (vb.dataset.v !== 'claude') KF = vb.dataset.v;
-    setPanes({[vb.dataset.v]: true}); if (vb.dataset.v === 'claude' && !boardOpen()) $('cin').focus();
+  if (vb){                                              // right click a pane switch: add or remove that pane
+    closeMenu(); const v = vb.dataset.v;
+    if (boardOpen() && vb.closest('#viewseg')){ closeBoard(); showPane(v); }
+    else togglePane(v);
+    if (v === 'claude' && shown('claude') && !boardOpen()) $('cin').focus();
     return;
   }
   if (boardOpen()) return closeMenu();
@@ -2062,31 +2063,40 @@ function pick(btn, list, key){
   const r = btn.getBoundingClientRect();
   menu(r.left, r.bottom + 4, list.map(([v, name]) => ({label: (S[key] === v ? '✓  ' : '    ') + name, run: () => { S[key] = v; cBar(); saveAll(); }})));
 }
+// Settings: one line per setting. A line with ▸ opens the short list of choices for it, and
+// picking one comes straight back here, so the menu stays one screen tall however much is in it.
+function choiceMenu(x, y, title, opts, isOn, pick){
+  const items = [{head: title}];
+  for (const [v, name] of opts) items.push({label: (isOn(v) ? '✓  ' : '    ') + name, run: () => { pick(v); saveAll(); settingsMenu($('gset')); }});
+  items.push('-', {label: '‹  back to settings', run: () => settingsMenu($('gset'))});
+  menu(x, y, items);
+}
 function settingsMenu(btn){
   const r = btn.getBoundingClientRect(), a = C.acct || {};
+  const mx = Math.max(8, r.right - 320), my = r.bottom + 4;
   const tick = on => (on ? '✓  ' : '    ');
-  const items = [{head: 'account'}, {head: !a.found ? 'Claude Code is not installed on this PC' : a.loggedIn ? (a.email || 'signed in') + (a.plan ? '  ·  ' + a.plan + ' plan' : '') : 'not signed in'}];
+  const line = (name, now, title, opts, isOn, pick) => ({label: name + ':  ' + now + '  ▸', run: () => choiceMenu(mx, my, title, opts, isOn, pick)});
+  const items = [{head: !a.found ? 'Claude Code is not installed on this PC' : a.loggedIn ? (a.email || 'signed in') + (a.plan ? '  ·  ' + a.plan + ' plan' : '') : 'not signed in'}];
   if (a.found) items.push({label: a.loggedIn ? 'Sign in as someone else...' : 'Sign in to Claude...', strong: !a.loggedIn, run: async () => {
     if (fm.claude.login){ await fm.claude.login(); toast('Finish signing in in the window that opened, then click Check again in settings.'); } }});
-  items.push({label: 'Check again', run: cStatus});
-  items.push('-', {head: 'chats'}, {label: tick(S.chatsPos === 'side') + 'List down the side', run: () => { S.chatsPos = 'side'; cBar(); saveAll(); }},
-    {label: tick(S.chatsPos === 'top') + 'Tabs across the top', run: () => { S.chatsPos = 'top'; cBar(); saveAll(); }});
-  items.push('-', {head: 'which side claude sits on'}, {label: tick(S.side === 'right') + 'Claude on the right', run: () => { S.side = 'right'; afterPanes(); }},
-    {label: tick(S.side === 'left') + 'Claude on the left', run: () => { S.side = 'left'; afterPanes(); }});
-  items.push('-', {head: 'talking'}, {label: tick(S.speak) + 'Claude reads replies out loud', run: () => { $('cvoice').click(); }},
-    {label: 'Voice and speed  ▸', run: () => voiceMenu(Math.max(8, r.right - 300), r.bottom + 4)});
-  items.push('-', {head: 'motion when you move through folders'}, {label: tick(motionMs() === MOTION.full) + 'Smooth', run: () => { S.motion = 'full'; saveAll(); }},
-    {label: tick(S.motion === 'quick') + 'Quick', run: () => { S.motion = 'quick'; saveAll(); }}, {label: tick(S.motion === 'off') + 'Off', run: () => { S.motion = 'off'; saveAll(); }});
-  items.push('-', {head: 'when loom starts'}, {label: tick(S.boardStart) + 'Open on the board', run: () => { S.boardStart = true; saveAll(); }},
-    {label: tick(!S.boardStart) + 'Open where I left off', run: () => { S.boardStart = false; saveAll(); }});
-  items.push('-', {head: 'root folder'}, {head: HOME || 'none chosen'}, {label: 'Choose a different root folder...', run: chooseRoot});
-  const mx = Math.max(8, r.right - 300), my = r.bottom + 4;
-  items.push('-', {head: 'look'}, {label: 'Theme:  ' + themeName() + '  ▸', run: () => themeMenu(mx, my)},
-    {label: tick(S.tint !== false) + 'Each pane in its own colour', run: () => { S.tint = S.tint === false; applyTheme(); saveAll(); }});
+  items.push({label: 'Check again', run: cStatus}, '-');
+  items.push({label: 'Theme:  ' + themeName() + '  ▸', run: () => themeMenu(mx, my)});       // this list stays open so several can be tried
+  items.push({label: tick(S.tint !== false) + 'Each pane in its own colour', run: () => { S.tint = S.tint === false; applyTheme(); saveAll(); settingsMenu(btn); }});
+  items.push(line('Motion', {full: 'smooth', quick: 'quick', off: 'off'}[S.motion] || 'smooth', 'motion when you move through folders', [['full', 'Smooth'], ['quick', 'Quick'], ['off', 'Off']], v => (S.motion || 'full') === v, v => { S.motion = v; }));
+  items.push('-');
+  items.push(line('Chats', S.chatsPos === 'top' ? 'tabs across the top' : 'list down the side', 'where the list of chats goes', [['side', 'List down the side'], ['top', 'Tabs across the top']], v => S.chatsPos === v, v => { S.chatsPos = v; cBar(); }));
+  items.push(line('Claude sits', S.side === 'left' ? 'on the left' : 'on the right', 'which side claude sits on', [['right', 'On the right'], ['left', 'On the left']], v => S.side === v, v => { S.side = v; afterPanes(); }));
+  items.push({label: tick(S.speak) + 'Claude reads replies out loud', run: () => { $('cvoice').click(); }});
+  items.push({label: 'Voice and speed  ▸', run: () => voiceMenu(mx, my)});
+  items.push('-');
+  items.push(line('When Loom starts', S.boardStart ? 'the board' : 'where I left off', 'when loom starts', [[true, 'Open on the board'], [false, 'Open where I left off']], v => !!S.boardStart === v, v => { S.boardStart = v; }));
+  items.push({label: 'Root folder:  ' + (HOME ? baseName(HOME) : 'none chosen') + '  ...', run: chooseRoot});
   menu(mx, my, items);
 }
 
-$('viewseg').onclick = ev => { const v = ev.target.dataset.v; if (v && boardOpen()){ closeBoard(); showPane(v); return; } if (v){ togglePane(v); if (v === 'claude' && shown('claude')) $('cin').focus(); } };
+// Left click: that pane on its own, filling the window. Right click: add it to, or take it off, what is showing.
+function soloPane(v){ if (v !== 'claude') KF = v; setPanes({[v]: true}); if (v === 'claude' && !boardOpen()) $('cin').focus(); }
+$('viewseg').onclick = ev => { const v = ev.target.dataset.v; if (!v) return; if (boardOpen()) closeBoard(); soloPane(v); };
 $('csend').onclick = cSend;
 $('cmode').onclick = ev => { const m = ev.target.dataset.m; if (m){ S.mode = m; cBar(); saveAll(); $('cin').focus(); } };
 $('cmodel').onclick = ev => pick(ev.currentTarget, MODELS, 'model');
@@ -2212,9 +2222,9 @@ async function loadFolders(){
 function drawRail(){
   const box = $('bproj'); box.textContent = '';
   box.append(el('div', 'bph', 'open with'));
-  const seg = el('span', 'seg'); seg.id = 'bwith'; seg.title = 'Which panes are up when you jump in.';
+  const seg = el('span', 'seg'); seg.id = 'bwith'; seg.title = 'Which panes are up when you jump in. Click for one, right click to add or remove.';
   for (const p of PANES){ const b = el('button', shown(p) ? 'on' : '', p); b.dataset.v = p; seg.append(b); }
-  seg.onclick = ev => { const v = ev.target.dataset.v; if (v) togglePane(v); };
+  seg.onclick = ev => { const v = ev.target.dataset.v; if (v) soloPane(v); };
   box.append(seg);
   box.append(el('div', 'bph', 'jump straight in'));
   const tops = (B.folders || []).filter(f => f.depth === 0);

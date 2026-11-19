@@ -22,7 +22,7 @@ Get **Loom-windows.zip** from the [latest release](../../releases/latest), unzip
 - **Phone.** The phone button starts Claude Code's Remote Control in your root folder, so you can keep working in the same folders from the Code tab of the Claude app on your phone. The PC has to stay on.
 - **Follow the save.** When Claude writes a file, every folder on the way to it pulses in the tree and so does the wire. Click the "Writing ..." line in the chat to jump to the file.
 - **Git.** Changes with tick boxes and diffs, history, branches, and one fetch / pull / push button. Push always asks first. Discard moves the old copy to a trash folder instead of destroying it.
-- **Panes.** Files, git and Claude are switches. Click to show any two or all three, right click one to fill the window with just that pane, and drag the bar between panes to resize. Folder columns size themselves to fit their names, and the preview takes the rest.
+- **Panes.** Files, git and Claude are switches. Click one for that pane on its own, right click to add or remove a pane beside the others, and drag the bar between panes to resize. Folder columns size themselves to fit their names, and the preview takes the rest.
 - **Right click.** Open, cut, copy, paste, rename, delete, new folder, compress to ZIP, properties, on any folder or file in any column.
 - **Shared chats.** Chats are saved inside the root folder, so everyone who opens the same folder sees the same chats.
 - **Themes.** Seven of them, under Settings.

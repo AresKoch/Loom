@@ -38,8 +38,8 @@ USING IT
   tag to jump straight into that folder. The list on the left jumps into any
   project. BOARD at the top (or Ctrl+B) brings the board back. Esc leaves it.
   To skip the board at startup: SETTINGS, "Open where I left off".
-- FILES, GIT and CLAUDE at the top are switches. Turn on any two or all three.
-  RIGHT CLICK one of them to fill the window with just that pane.
+- FILES, GIT and CLAUDE at the top are switches. CLICK one for that pane on
+  its own. RIGHT CLICK one to add or remove it beside the others.
 - RIGHT CLICK any folder or file for Open, Cut, Copy, Paste, Rename, Delete,
   New folder, Compress to ZIP file and Properties.
   Drag the bar between two panes to resize. Double click the bar to reset it.
