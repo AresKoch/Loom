@@ -149,6 +149,8 @@ app.whenReady().then(() => {
     chatDelete: a => backend.chatDelete(a),
     boardGet: a => backend.boardGet(a),
     boardSave: a => backend.boardSave(a),
+    zip: a => backend.zip(a),
+    props: a => backend.props(a),
     // A picture of the file from Windows itself: the same thumbnail Explorer shows
     // (SolidWorks parts, drawings, images, Office files with a saved preview).
     thumb: async ({ path: p, size }) => {

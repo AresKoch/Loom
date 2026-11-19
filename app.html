@@ -309,7 +309,9 @@ body:not([data-solo=files]) #cols{gap:22px}
 #brandlogo{display:flex;align-items:center;flex:none}
 #rootbtn{-webkit-app-region:no-drag;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg);font-weight:700}
 #viewseg{-webkit-app-region:no-drag}
-#viewseg button{padding:4px 11px}
+#viewseg button{padding:7px 17px;font-size:12px;letter-spacing:.1em}
+#viewseg{border-radius:9px}
+#bbtn,#gset{padding:7px 13px;font-size:11.5px}
 
 /* claude pane */
 .cin{border-width:1px}
@@ -498,6 +500,13 @@ body[data-board="1"] #crumbs{visibility:hidden}
 .tp.act{background:var(--a1);color:var(--on)}
 .tp span{overflow:hidden;text-overflow:ellipsis}
 .tp small{margin-left:auto;opacity:.65;font-size:10.5px}
+#colpick{position:fixed;z-index:60;display:none;grid-template-columns:repeat(3,26px);gap:7px;padding:9px;background:rgba(var(--float),.96);backdrop-filter:blur(30px);border:1px solid var(--line2);border-radius:11px;box-shadow:0 22px 60px rgba(0,0,0,var(--sh))}
+.sw{width:26px;height:26px;border-radius:6px;border:2px solid transparent;cursor:pointer;padding:0}
+.sw:hover{transform:scale(1.12)}
+.sw.on{border-color:var(--hi)}
+.props{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;margin:10px 0 18px;user-select:text}
+.props span:nth-child(odd){color:var(--dim)}
+.props span:nth-child(even){overflow-wrap:anywhere}
 #keys .bk{display:none}
 body[data-board="1"] #keys>span:not(.r):not(.bk){display:none}
 body[data-board="1"] #keys>span.bk:not(.r){display:inline}
@@ -510,7 +519,7 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
   <div id="crumbs"></div>
   <div class="searchwrap"><input id="q" placeholder="find any folder or file" autocomplete="off" spellcheck="false"><div id="results"></div></div>
   <button class="cbtn" id="bbtn" title="The board: sticky notes and a jump into any project. Ctrl+B.">board</button>
-  <span class="seg" id="viewseg" title="Click to show or hide each pane. Any mix of two or three sits side by side. Ctrl+G is git, Ctrl+J is Claude."><button data-v="files">files</button><button data-v="git">git</button><button data-v="claude">claude</button></span>
+  <span class="seg" id="viewseg" title="Click to show or hide a pane. Right click to show only that one. Ctrl+G is git, Ctrl+J is Claude."><button data-v="files">files</button><button data-v="git">git</button><button data-v="claude">claude</button></span>
   <button class="cbtn" id="gset" title="Account, theme, layout and root folder">settings</button>
   <span id="clock"></span>
 </div>
@@ -577,7 +586,7 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
     <div id="bwrap"><div id="bcanvas"></div></div>
   </div>
 </section>
-<div id="tagpick"></div>
+<div id="tagpick"></div><div id="colpick"></div>
 <div id="keys">
   <span><kbd>&uarr;</kbd><kbd>&darr;</kbd>move</span><span><kbd>&rarr;</kbd><kbd>&larr;</kbd>in / out</span>
   <span><kbd>shift</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd>select more</span><span><kbd>space</kbd>add / remove</span>
@@ -791,7 +800,7 @@ function setPeekFile(f){
   if (!f || (peekFile && peekFile.path === f.path)) return;
   peekFile = f;
   const p = $('peek'); if (p) fillPeek(p); else return render(false);
-  markPeek(); drawWires();
+  markPeek(); alignCols(); drawWires();
 }
 function fillPeek(c){
   if (peekFile) return fillFile(c);
@@ -818,7 +827,7 @@ function setPeek(d){
   if (!d || d.skip || (!peekFile && peekDir && peekDir.path === d.path)) return;
   peekDir = d; peekFile = null;
   const p = $('peek'); if (p) fillPeek(p); else return render(false);
-  markPeek(); drawWires();
+  markPeek(); alignCols(); drawWires();
 }
 function paintSel(){
   for (const r of document.querySelectorAll('#list .row')){
@@ -886,14 +895,39 @@ function render(moved){
   drawWires();
 }
 
-// Keep the folder you are in fully on screen. Show the parents too when there is room.
+// Columns size themselves. Each folder column is as wide as its longest name needs, and the
+// column on the far right (the preview, or the open folder when nothing is previewed) takes
+// whatever is left, so the pane is always filled and nothing is set by hand.
+const textW = (() => { const cv = document.createElement('canvas').getContext('2d'), memo = new Map(); let font = '';
+  return t => { const f = getComputedStyle(document.body).font; if (f !== font){ font = f; memo.clear(); cv.font = f; }
+    let w = memo.get(t); if (w == null){ w = cv.measureText(t).width; if (memo.size > 6000) memo.clear(); memo.set(t, w); } return w; }; })();
+function colNeed(col){
+  const widest = q => { let m = 0; for (const e of col.querySelectorAll(q)) m = Math.max(m, textW(e.textContent)); return m; };
+  const head = widest('.head .hn') * 1.12 + 40;
+  if (col.classList.contains('anc')) return Math.min(300, Math.max(118, head, widest('.nn') + 104));
+  if (col.classList.contains('act')) return Math.min(640, Math.max(250, head, widest('.nn') + 116, widest('.fname') ? widest('.fname') + 250 : 0));
+  return Math.max(220, Math.min(380, Math.max(head, widest('.nn') + 84, widest('.pfile span:last-child') + 96)));
+}
 function alignCols(){
   const cols = $('cols'), act = cols.querySelector('.col.act'); if (!act) return;
-  // Squeeze every column in step when the files pane is narrow, down to 45% of full size, before any is cut off.
-  cols.style.setProperty('--k', 1);
-  const all = [...cols.children], gap = parseFloat(getComputedStyle(cols).columnGap) || 0;
-  const natural = all.reduce((w, c) => w + c.offsetWidth, 0), room = cols.clientWidth - 26 - gap * (all.length - 1);
-  if (natural > room && natural > 0) cols.style.setProperty('--k', Math.max(.45, room / natural).toFixed(3));
+  const all = [...cols.children], cs = getComputedStyle(cols), gap = parseFloat(cs.columnGap) || 0;
+  const room = cols.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - gap * (all.length - 1);
+  const need = all.map(colNeed), last = all.length - 1;
+  if (peekFile && all[last].classList.contains('peek')){ need[last] = Math.max(need[last], Math.min(780, room * .42)); need[last - 1] = Math.min(need[last - 1], 430); }   // a file preview wants real room: code, a PDF, a drawing
+  const min = all.map((c, i) => (c.classList.contains('anc') ? 92 : c.classList.contains('act') ? Math.min(need[i], 230) : 200));
+  const floor = all.map(c => (c.classList.contains('anc') ? 54 : c.classList.contains('act') ? 168 : 140));
+  const sum = () => need.reduce((a, b) => a + b, 0);
+  // Too tight: the parents give way first, then the rest, and only after that does the pane scroll.
+  for (const [pick, low] of [[c => c.classList.contains('anc'), min], [() => true, min], [() => true, floor]]){
+    const over = sum() - room; if (over <= 0) break;
+    const idx = all.map((c, i) => i).filter(i => pick(all[i]) && need[i] > low[i]);
+    const slack = idx.reduce((a, i) => a + need[i] - low[i], 0); if (slack <= 0) continue;
+    const take = Math.min(1, over / slack);
+    for (const i of idx) need[i] -= (need[i] - low[i]) * take;
+  }
+  const spare = room - sum();
+  if (spare > 0) need[last] += spare;                      // the right-hand column soaks up the rest
+  all.forEach((c, i) => { c.style.width = Math.floor(need[i]) + 'px'; });
   const fits = cols.scrollWidth - act.offsetLeft + 12 <= cols.clientWidth;
   cols.style.scrollBehavior = 'auto';
   cols.scrollLeft = fits ? cols.scrollWidth : act.offsetLeft - 12;
@@ -1008,6 +1042,53 @@ async function paste(dest){
   if (await copyTo(was.paths, dest || cur.path, was.cut) && was.cut){ clip = {paths: [], cut: false}; paintSel(); }
 }
 
+// ---------- the same jobs, for any folder or file on screen (the right click menu) ----------
+const baseName = p => String(p).replace(/[\\/]+$/, '').split(/[\\/]/).pop();
+const parentOf = p => String(p).replace(/[\\/]+$/, '').replace(/[\\/][^\\/]+$/, '');
+const flat = p => String(p).replace(/[\\/]+$/, '').replace(/\//g, '\\').toLowerCase();
+const within = (p, dir) => (flat(p) + '\\').startsWith(flat(dir) + '\\');
+function clipPaths(paths, cut){
+  clip = {paths: [...paths], cut}; paintSel();
+  toast((cut ? 'Cut ' : 'Copied ') + (paths.length === 1 ? baseName(paths[0]) : plural(paths.length, 'item')) + '. Right click a folder and choose Paste, or press Ctrl+V.');
+}
+async function renamePath(p){
+  const old = baseName(p);
+  const name = await askText('Rename', old, 'Rename');
+  if (name == null || name.trim() === old) return;
+  try {
+    const r = await call('rename', {path: p, name});
+    cache.clear();
+    await go(within(cur.path, p) ? r.path + cur.path.slice(p.replace(/[\\/]+$/, '').length) : cur.path, {noHistory: true});   // renamed a folder we are inside of: follow it
+    if (same(parentOf(r.path), cur.path)) focusItem(r.path);
+  } catch (e) { fail(e); }
+}
+async function zipPaths(paths){
+  toast('Compressing ' + (paths.length === 1 ? baseName(paths[0]) : plural(paths.length, 'item')) + '...');
+  try {
+    const r = await call('zip', {paths});
+    cache.clear(); await go(cur.path, {noHistory: true});
+    if (same(parentOf(r.path), cur.path)) focusItem(r.path);
+    toast('Made ' + baseName(r.path) + '.');
+  } catch (e) { fail(e); }
+}
+async function showProps(paths){
+  let r; toast('Adding it up...');
+  try { r = await call('props', {paths}); } catch (e) { return fail(e); }
+  $('toast').className = '';
+  const d = $('dlg'); d.textContent = '';
+  d.append(el('h3', '', r.name));
+  const g = el('div', 'props'), row = (k, v) => { if (v) g.append(el('span', '', k), el('span', '', v)); };
+  const day = t => (t ? new Date(t).toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'}) : '');
+  row('Type', r.type); row('Location', r.location);
+  row('Size', size(r.size) + '  (' + r.size.toLocaleString() + ' bytes)' + (r.partial ? ', and more' : ''));
+  if (r.dir || r.many) row('Contains', plural(r.files, 'file') + ', ' + plural(r.folders, 'folder') + (r.partial ? ' counted so far' : ''));
+  row('Created', day(r.created)); row('Modified', day(r.modified));
+  d.append(g);
+  const bs = el('div', 'btns');
+  const ok = el('button', 'btn pri', 'Close'); ok.onclick = () => $('veil').classList.remove('on');
+  bs.append(ok); d.append(bs); $('veil').classList.add('on'); ok.focus();
+}
+
 // ---------- rename, new folder ----------
 function askText(title, value, okLabel){
   return new Promise(resolve => {
@@ -1035,13 +1116,14 @@ async function renameItem(){
     focusItem(r.path);
   } catch (e) { fail(e); }
 }
-async function newFolder(){
-  const name = await askText('New folder in ' + cur.name, 'New folder', 'Create');
+async function newFolder(dir){
+  if (typeof dir !== 'string') dir = cur.path;
+  const name = await askText('New folder in ' + (same(dir, cur.path) ? cur.name : baseName(dir)), 'New folder', 'Create');
   if (name == null) return;
   try {
-    const r = await call('mkdir', {path: cur.path, name});
+    const r = await call('mkdir', {path: dir, name});
     cache.clear(); pollDrives(true); await go(cur.path, {noHistory: true});
-    focusItem(r.path);
+    if (same(dir, cur.path)) focusItem(r.path); else toast('Made ' + baseName(r.path) + ' in ' + baseName(dir) + '.');
   } catch (e) { fail(e); }
 }
 // Put the cursor (and for a file, the selection) on one item of the active folder.
@@ -1085,7 +1167,8 @@ async function deleteItems(paths){
     toast(r.trash ? 'Moved ' + what + ' to .folder-map-trash' : 'Deleted ' + what + '.');
   } catch (e) { fail(e); }
   sel.clear(); cache.clear(); pollDrives(true);
-  await go(cur.path, {noHistory: true});
+  const gone = paths.find(p => within(cur.path, p));
+  await go(gone ? parentOf(gone) : cur.path, {noHistory: true});
   kb = Math.min(kb, cur.dirs.length + cur.files.length - 1); paintKb(true);
 }
 
@@ -1229,6 +1312,14 @@ async function printFiles(files){
 let menuByKeys = false;
 document.addEventListener('contextmenu', ev => {
   ev.preventDefault();
+  const vb = ev.target.closest('#viewseg button, #bwith button');
+  if (vb){                                              // right click a pane switch: only that pane, filling the window
+    closeMenu(); if (boardOpen() && vb.closest('#viewseg')) closeBoard();
+    if (vb.dataset.v !== 'claude') KF = vb.dataset.v;
+    setPanes({[vb.dataset.v]: true}); if (vb.dataset.v === 'claude' && !boardOpen()) $('cin').focus();
+    return;
+  }
+  if (boardOpen()) return closeMenu();
   const byKeys = menuByKeys; menuByKeys = false;
   const menuFn = menu, menuK = (x, y, items) => menuFn(x, y, items, byKeys);
   const row = ev.target.closest('#list .row'), node = ev.target.closest('.node'), drop = ev.target.closest('[data-drop]');
@@ -1238,38 +1329,40 @@ document.addEventListener('contextmenu', ev => {
     const printable = files.filter(f => f.printable);
     const items = [{head: one ? files[0].name : plural(files.length, 'file') + ' selected'}];
     if (one) items.push({label: 'Open', strong: true, run: () => call('open', {path: paths[0]}).catch(fail)});
+    if (one) items.push({label: 'Show in File Explorer', run: () => call('reveal', {path: paths[0]}).catch(fail)});
+    items.push('-', {label: 'Cut    ctrl+x', run: () => clipPaths(paths, true)}, {label: 'Copy    ctrl+c', run: () => clipPaths(paths, false)});
+    if (clip.paths.length) items.push({label: 'Paste here    ctrl+v', run: () => paste()});
+    items.push('-');
+    if (one) items.push({label: 'Rename    f2', run: () => renamePath(paths[0])});
+    items.push({label: (one ? 'Delete' : 'Delete ' + files.length) + '    del', run: () => deleteItems(paths)});
+    items.push('-', {label: 'Compress to ZIP file', run: () => zipPaths(paths)});
     if (printable.length) items.push({label: one ? 'Print' : (printable.length === files.length ? 'Print all ' + files.length : 'Print ' + printable.length + ' printable'), run: () => printFiles(printable)});
     items.push(...usbItems(paths));
-    items.push('-', {label: 'Cut    ctrl+x', run: () => setClip(true)}, {label: 'Copy    ctrl+c', run: () => setClip(false)});
-    if (one) items.push({label: 'Rename    f2', run: renameItem});
-    items.push({label: (one ? 'Delete' : 'Delete ' + files.length) + '    del', run: () => deleteItems(paths)});
-    items.push('-');
-    if (one){ items.push({label: 'Show in File Explorer', run: () => call('reveal', {path: paths[0]}).catch(fail)}); items.push({label: 'Copy path', run: () => copyPath(paths[0])}); }
-    else items.push({label: 'Copy paths', run: () => copyPath(paths.join('\r\n'))});
+    items.push('-', {label: one ? 'Copy path' : 'Copy paths', run: () => copyPath(paths.join('\r\n'))}, {label: 'Properties', run: () => showProps(paths)});
     return menuK(ev.clientX, ev.clientY, items);
   }
   const dirPath = (node && !node.classList.contains('skip') && node.dataset.path) || (drop && drop.dataset.drop);
   if (dirPath){
     const name = dirPath.replace(/\\$/, '').split('\\').pop();
-    const items = [{head: name}, {label: 'Go to folder', strong: true, run: () => go(dirPath)},
+    const items = [{head: name}, {label: 'Open', strong: true, run: () => go(dirPath)},
       {label: 'Open in File Explorer', run: () => call('reveal', {path: dirPath}).catch(fail)}];
-    if (!drop) items.push(...usbItems([dirPath]));
-    if (clip.paths.length) items.push('-', {label: 'Paste into ' + name, run: () => paste(dirPath)});
-    if (node && node.closest('.act')){
-      const i = cur.dirs.findIndex(d => d.path === dirPath);
-      const here = fn => () => { kb = i; sel.clear(); paintSel(); paintKb(); fn(); };
-      items.push('-', {label: 'Cut    ctrl+x', run: here(() => setClip(true))}, {label: 'Copy    ctrl+c', run: here(() => setClip(false))},
-        {label: 'Rename    f2', run: here(renameItem)}, {label: 'Delete    del', run: () => deleteItems([dirPath])});
-    }
+    if (!drop) items.push('-', {label: 'Cut', run: () => clipPaths([dirPath], true)}, {label: 'Copy', run: () => clipPaths([dirPath], false)});
+    if (clip.paths.length) items.push({label: 'Paste into ' + name, run: () => paste(dirPath)});
+    if (!drop) items.push('-', {label: 'Rename', run: () => renamePath(dirPath)}, {label: 'Delete', run: () => deleteItems([dirPath])});
+    items.push('-', {label: 'New folder inside', run: () => newFolder(dirPath)});
+    if (!drop){ items.push({label: 'Compress to ZIP file', run: () => zipPaths([dirPath])}); items.push(...usbItems([dirPath])); }
     items.push('-', {label: 'Copy path', run: () => copyPath(dirPath)});
+    if (!drop) items.push({label: 'Properties', run: () => showProps([dirPath])});
     return menuK(ev.clientX, ev.clientY, items);
   }
-  if (ev.target.closest('#stage')){
-    const items = [{head: cur.name}];
-    if (clip.paths.length) items.push({label: 'Paste ' + plural(clip.paths.length, 'item') + ' here    ctrl+v', strong: true, run: () => paste()});
-    items.push({label: 'New folder    ctrl+shift+n', run: newFolder}, '-',
-      {label: 'Open in File Explorer', run: () => call('reveal', {path: cur.path}).catch(fail)},
-      {label: 'Copy path', run: () => copyPath(cur.path)}, '-', {label: 'Refresh    f5', run: refresh});
+  if (ev.target.closest('#stage') && cur){
+    const col = ev.target.closest('.col.anc'), i = col ? [...$('cols').children].indexOf(col) : -1;
+    const here = i >= 0 && chain[i] ? chain[i] : cur;      // right click the empty part of any column: that column's folder
+    const items = [{head: here.name}];
+    if (clip.paths.length) items.push({label: 'Paste ' + plural(clip.paths.length, 'item') + ' here' + (here === cur ? '    ctrl+v' : ''), strong: true, run: () => paste(here.path)});
+    items.push({label: 'New folder' + (here === cur ? '    ctrl+shift+n' : ''), run: () => newFolder(here.path)}, '-',
+      {label: 'Open in File Explorer', run: () => call('reveal', {path: here.path}).catch(fail)},
+      {label: 'Copy path', run: () => copyPath(here.path)}, {label: 'Properties', run: () => showProps([here.path])}, '-', {label: 'Refresh    f5', run: refresh});
     return menu(ev.clientX, ev.clientY, items);
   }
   closeMenu();
@@ -1837,7 +1930,8 @@ $('clogo').innerHTML = SPARK; $('brandlogo').innerHTML = SPARK;
 // ---------- the board ----------
 // The start screen: loose sticky notes, saved inside the root folder next to the chats.
 // A note can tag folders (type /). Clicking a tag opens that folder in the workspace.
-const NOTE_COLORS = ['#f4d976', '#f3aebb', '#a5cdf0', '#afdca6', '#f2b784', '#e7e1d3'];
+const NOTE_COLORS = ['#f4d976', '#f3aebb', '#a5cdf0', '#afdca6', '#f2b784', '#e7e1d3', '#c9b6ee', '#9fe0d4', '#f08f7d'];   // saved notes keep their number, so only ever add to the end
+const NOTE_GRID = [0, 4, 8, 1, 6, 2, 7, 3, 5];          // the order the picker shows them in
 const B = {notes: [], folders: null, saveT: 0, pick: null, z: 1, gone: null, color: 0, seq: 0, warned: false};
 function boardOpen(){ return document.body.dataset.board === '1'; }
 const sepOf = () => (HOME.includes('\\') ? '\\' : '/');
@@ -1927,7 +2021,7 @@ function noteEl(n){
   place();
   const bar = el('div', 'nbar');
   const col = el('button', '', '●'); col.title = 'Change colour';
-  col.onclick = () => { n.c = ((n.c || 0) + 1) % NOTE_COLORS.length; B.color = n.c; place(); saveBoard(); };
+  col.onclick = () => colorPick(col, n, place);
   const del = el('button', '', '✕'); del.title = 'Remove this note';
   del.onclick = () => removeNote(n, true);
   bar.append(col, del);
@@ -1950,7 +2044,8 @@ function noteEl(n){
   tx.addEventListener('blur', () => { setTimeout(closePick, 120); if (noteEmpty(n)) removeNote(n, false); else drawRail(); });
   tx._changed = changed;
   bar.addEventListener('mousedown', ev => {
-    if (ev.target.closest('button') || ev.button !== 0) return;
+    if (ev.target.closest('button')){ ev.preventDefault(); return; }   // keep the note being typed in focused
+    if (ev.button !== 0) return;
     ev.preventDefault();
     const sx = ev.clientX - n.x, sy = ev.clientY - n.y; n.z = ++B.z; e.style.zIndex = n.z; e.classList.add('drag');
     const move = m => { n.x = Math.max(0, Math.round(m.clientX - sx)); n.y = Math.max(0, Math.round(m.clientY - sy)); e.style.left = n.x + 'px'; e.style.top = n.y + 'px'; };
@@ -1998,6 +2093,21 @@ $('bcanvas').addEventListener('click', ev => { const t = ev.target.closest('.tag
 $('bnew').onclick = addNoteInView;
 $('bgo').onclick = () => closeBoard();
 $('bbtn').onclick = () => (boardOpen() ? closeBoard() : openBoard());
+
+function colorPick(btn, n, place){
+  const box = $('colpick'); box.textContent = '';
+  NOTE_GRID.forEach(i => {
+    const c = NOTE_COLORS[i];
+    const b = el('button', 'sw' + ((n.c || 0) % NOTE_COLORS.length === i ? ' on' : '')); b.style.background = c;
+    b.onmousedown = ev => { ev.preventDefault(); n.c = i; B.color = i; place(); saveBoard(); box.style.display = 'none'; };
+    box.append(b);
+  });
+  const r = btn.getBoundingClientRect();
+  box.style.display = 'grid';
+  box.style.left = Math.max(8, Math.min(r.left - 8, innerWidth - box.offsetWidth - 8)) + 'px';
+  box.style.top = Math.min(r.bottom + 6, innerHeight - box.offsetHeight - 8) + 'px';
+}
+document.addEventListener('mousedown', ev => { if (!ev.target.closest('#colpick') && !ev.target.closest('.nbar button')) $('colpick').style.display = 'none'; });
 
 // ----- the / picker -----
 function closePick(){ B.pick = null; $('tagpick').style.display = 'none'; }
@@ -2092,6 +2202,7 @@ function openBoard(){
 }
 function closeBoard(){
   if (!boardOpen()) return;
+  $('colpick').style.display = 'none';
   if (document.activeElement && document.activeElement.classList.contains('ntext')) document.activeElement.blur();
   closePick(); flushBoard();
   delete document.body.dataset.board; $('bbtn').classList.remove('on');

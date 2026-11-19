@@ -459,6 +459,59 @@ function create({ workspace, fakeUsb }) {
     return { sent, failed };
   }
 
+  // ---------- compress to zip, properties ----------
+  function run(cmd, args, opts) {
+    return new Promise((resolve, reject) => execFile(cmd, args, { windowsHide: true, timeout: 15 * 60 * 1000, maxBuffer: 1 << 20, ...opts },
+      (err, out, errOut) => (err ? reject(new Error(String(errOut || err.message).trim().split('\n')[0])) : resolve(out))));
+  }
+  // Makes <name>.zip beside the item (or beside the items, when several from one folder are picked).
+  async function zip({ paths }) {
+    await getDrives(false);
+    const list = (paths || []).map(check);
+    if (!list.length) throw new Problem('Nothing to compress.');
+    const dir = path.dirname(list[0]);
+    if (list.some(p => norm(path.dirname(p)) !== norm(dir))) throw new Problem('Pick items from one folder to compress them together.');
+    for (const p of list) if (!(await exists(p))) throw new Problem(path.basename(p) + ' is not there any more.');
+    const stem = list.length === 1 ? path.basename(list[0]).replace(/\.[^.]+$/, m => ((fs.statSync(list[0]).isDirectory()) ? m : '')) : path.basename(dir);
+    let out = path.join(dir, stem + '.zip');
+    if (await exists(out)) out = await unique(out);
+    const names = list.map(p => path.basename(p)).map(n => (n.startsWith('-') || n.startsWith('@') ? './' + n : n));
+    try {
+      if (process.platform === 'win32') {
+        const tar = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
+        try { await run(tar, ['-a', '-c', '-f', out, ...names], { cwd: dir }); }
+        catch (e) {                                        // older Windows without tar: PowerShell does it, slower
+          await fsp.rm(out, { force: true });
+          await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'Compress-Archive -LiteralPath ($env:FM_ITEMS -split "`n") -DestinationPath $env:FM_OUT'],
+            { cwd: dir, env: { ...process.env, FM_ITEMS: list.join('\n'), FM_OUT: out } });
+        }
+      } else await run('zip', ['-r', '-q', out, ...names], { cwd: dir });
+    } catch (e) { await fsp.rm(out, { force: true }).catch(() => {}); throw new Problem('Could not make the zip file: ' + e.message); }
+    reindex();
+    return { path: out };
+  }
+  async function props({ paths }) {
+    const list = (paths || []).map(check);
+    if (!list.length) throw new Problem('Nothing picked.');
+    const t = { size: 0, files: 0, folders: 0, seen: 0, partial: false };
+    async function walk(p, top) {
+      if (t.seen++ > 150000) { t.partial = true; return; }
+      let st; try { st = await fsp.stat(p); } catch (e) { return; }
+      if (!st.isDirectory()) { t.size += st.size; if (!top) t.files++; return; }
+      if (!top) t.folders++;
+      let ents = []; try { ents = await fsp.readdir(p); } catch (e) { /* no permission */ }
+      for (const n of ents) await walk(path.join(p, n), false);
+    }
+    if (list.length > 1) {
+      for (const p of list) { const st = await fsp.stat(p); if (st.isDirectory()) t.folders++; else t.files++; await walk(p, true); }
+      return { many: true, name: list.length + ' items', type: 'Several items', location: path.dirname(list[0]), size: t.size, files: t.files, folders: t.folders, partial: t.partial };
+    }
+    const ap = list[0], st = await fsp.stat(ap), dir = st.isDirectory(), ext = path.extname(ap).slice(1);
+    await walk(ap, true);
+    return { name: path.basename(ap) || ap, dir, type: dir ? 'Folder' : (ext ? ext.toUpperCase() + ' file' : 'File'), location: path.dirname(ap),
+      size: t.size, files: t.files, folders: t.folders, partial: t.partial, created: st.birthtimeMs, modified: st.mtimeMs };
+  }
+
   // ---------- the board ----------
   // Sticky notes for the start screen, kept with the chats (ROOT\.folder-map\board.json).
   // Folder tags are saved relative to the root, so the board still works if the root moves.
@@ -489,7 +542,7 @@ function create({ workspace, fakeUsb }) {
     return { ok: true };
   }
 
-  return { root: () => WORKSPACE, setRoot, preview, chatsList, chatSave, chatDelete, boardGet, boardSave, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
+  return { root: () => WORKSPACE, setRoot, preview, chatsList, chatSave, chatDelete, boardGet, boardSave, zip, props, check, ls, drives: ({ force } = {}) => getDrives(force), search, copy, remove, rename, mkdir, print,
     startIndexing, TRASH, home: () => ({ home: WORKSPACE }) };
 }
 
