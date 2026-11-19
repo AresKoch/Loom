@@ -800,9 +800,16 @@ function setPeekFile(f){
   if (!f || (peekFile && peekFile.path === f.path)) return;
   peekFile = f;
   const p = $('peek'); if (p) fillPeek(p); else return render(false);
-  markPeek(); alignCols(); drawWires();
+  markPeek(); alignCols(true); drawWires();
 }
 function fillPeek(c){
+  const k = peekFile ? peekFile.path : peekDir ? peekDir.path : '';
+  if (c.dataset.k && c.dataset.k !== k && motionMs()){     // what is inside changed: fade the new contents up
+    const now = performance.now(), hurried = now - (M.peekAt || 0) < 130; M.peekAt = now;
+    for (const an of c.getAnimations()) if (an.id === 'peekfade') an.cancel();
+    if (!hurried){ const an = c.animate([{opacity: .25}, {}], {duration: motionMs() * .9, easing: 'ease-out'}); an.id = 'peekfade'; }
+  }
+  c.dataset.k = k;
   if (peekFile) return fillFile(c);
   c.textContent = '';
   const d = peekDir; if (!d) return;
@@ -827,7 +834,7 @@ function setPeek(d){
   if (!d || d.skip || (!peekFile && peekDir && peekDir.path === d.path)) return;
   peekDir = d; peekFile = null;
   const p = $('peek'); if (p) fillPeek(p); else return render(false);
-  markPeek(); alignCols(); drawWires();
+  markPeek(); alignCols(true); drawWires();
 }
 function paintSel(){
   for (const r of document.querySelectorAll('#list .row')){
@@ -875,9 +882,9 @@ function render(moved){
   const cols = $('cols'); cols.textContent = '';
   for (let i = 0; i < chain.length - 1; i++){
     const col = ancCol(chain[i], chain[i + 1].path, i === 0 ? (cur.usb ? 'usb drive' : 'root') : 'parent');
-    cols.append(col);
+    col.dataset.k = chain[i].path; cols.append(col);
   }
-  const act = actCol(); cols.append(act);
+  const act = actCol(); act.dataset.k = cur.path; cols.append(act);
   let peek = null;
   if (peekDir || peekFile){ peek = peekCol(); cols.append(peek); }
   // keep each parent's highlighted folder in view
@@ -886,15 +893,42 @@ function render(moved){
     if (on) b.scrollTop = on.offsetTop - b.offsetTop - b.clientHeight / 2 + 16;
   }
   markPeek(); paintKb(true); foot();
-  if (moved){
-    act.classList.add('in'); if (peek) peek.classList.add('in');
-    requestAnimationFrame(() => requestAnimationFrame(() => { act.classList.remove('in'); if (peek) peek.classList.remove('in'); }));
-    setTimeout(drawWires, 170);
-  }
-  alignCols();
+  alignCols(moved ? true : 'soft');                    // a redraw of the same folder only eases widths, it does not fade
   drawWires();
 }
 
+// Motion. Moving through folders used to redraw everything in one frame, which the eye cannot follow.
+// Now a column that stays on screen eases to its new width (so its neighbours glide along with it),
+// a column that is new slides in from the right while it fades up, and one whose job changed
+// (the open folder becoming a parent, say) fades into its new look. Holding an arrow key skips all of it.
+const MOTION = {full: 300, quick: 160, off: 0};
+function motionMs(){ return MOTION[S.motion] == null ? MOTION.full : MOTION[S.motion]; }
+const M = {was: new Map(), at: 0, loop: 0};
+function moveCols(all, need, animate){
+  const ms = motionMs(), now = performance.now(), hurried = now - M.at < 110; M.at = now;
+  const next = new Map();
+  all.forEach((c, i) => {
+    const k = c.dataset.k || '', to = Math.floor(need[i]), role = c.className.replace(/\s*\b(in|first|hotcol)\b/g, ''), old = M.was.get(k);
+    next.set(k, {w: to, role, el: c});
+    if (!animate || !ms || hurried) return;
+    const ease = 'cubic-bezier(.22,.8,.3,1)';
+    if (!old){ c.animate([{opacity: 0, transform: 'translateX(26px)'}, {}], {duration: ms * 1.15, easing: ease}); return; }
+    if (Math.abs(old.w - to) > 2) c.animate([{width: old.w + 'px'}, {width: to + 'px'}], {duration: ms, easing: ease});
+    if (animate !== true) return;
+    if (old.el !== c && old.role !== role) c.animate([{opacity: .12}, {}], {duration: ms * 1.1, easing: 'ease-out'});
+    else if (old.el !== c) c.animate([{opacity: .55}, {}], {duration: ms * .8, easing: 'ease-out'});
+  });
+  M.was = next;
+  if (!animate || !ms || hurried) return;
+  const cols = $('cols'), id = ++M.loop, end = now + ms * 1.2 + 40;
+  cols.style.overflowX = 'hidden';                        // no scrollbar flashing while a column slides in past the edge
+  (function follow(){                                     // the wires follow the columns while they move
+    if (id !== M.loop) return;
+    if (cols.scrollLeft !== M.pin){ cols.style.scrollBehavior = 'auto'; cols.scrollLeft = M.pin; cols.style.scrollBehavior = ''; }   // stay put while widths are in flight
+    drawWires();
+    if (performance.now() < end) requestAnimationFrame(follow); else cols.style.overflowX = '';
+  })();
+}
 // Columns size themselves. Each folder column is as wide as its longest name needs, and the
 // column on the far right (the preview, or the open folder when nothing is previewed) takes
 // whatever is left, so the pane is always filled and nothing is set by hand.
@@ -908,7 +942,7 @@ function colNeed(col){
   if (col.classList.contains('act')) return Math.min(640, Math.max(250, head, widest('.nn') + 116, widest('.fname') ? widest('.fname') + 250 : 0));
   return Math.max(220, Math.min(380, Math.max(head, widest('.nn') + 84, widest('.pfile span:last-child') + 96)));
 }
-function alignCols(){
+function alignCols(animate){
   const cols = $('cols'), act = cols.querySelector('.col.act'); if (!act) return;
   const all = [...cols.children], cs = getComputedStyle(cols), gap = parseFloat(cs.columnGap) || 0;
   const room = cols.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - gap * (all.length - 1);
@@ -930,8 +964,10 @@ function alignCols(){
   all.forEach((c, i) => { c.style.width = Math.floor(need[i]) + 'px'; });
   const fits = cols.scrollWidth - act.offsetLeft + 12 <= cols.clientWidth;
   cols.style.scrollBehavior = 'auto';
-  cols.scrollLeft = fits ? cols.scrollWidth : act.offsetLeft - 12;
+  cols.scrollLeft = fits ? 0 : act.offsetLeft - 12;        // anchored on the left, so new columns arrive from the right
   cols.style.scrollBehavior = '';
+  M.pin = cols.scrollLeft;
+  moveCols(all, need, animate);
 }
 // Wires join each folder on the path to the column that shows what is inside it.
 function drawWires(){
@@ -1535,7 +1571,7 @@ const EFFORTS = [['', 'default'], ['low', 'low'], ['medium', 'medium'], ['high',
 const WINDOW_NAME = {five_hour: 'session (5 hr)', seven_day: 'week'};
 
 function load(key, dflt){ try { const v = JSON.parse(localStorage.getItem(key) || 'null'); return v == null ? dflt : v; } catch (e) { return dflt; } }
-const S = Object.assign({view: 'split', side: 'right', chatsPos: 'side', mode: 'look', model: '', effort: '', usage: null, chatId: null, theme: '', gitRepo: null, panes: null, w: {}, boardStart: true}, load('fm.ui', {}));
+const S = Object.assign({view: 'split', side: 'right', chatsPos: 'side', mode: 'look', model: '', effort: '', usage: null, chatId: null, theme: '', gitRepo: null, panes: null, w: {}, boardStart: true, motion: 'full'}, load('fm.ui', {}));
 if (!MODE_HINT[S.mode]) S.mode = 'look';
 // Chats are shared: they are saved inside the root folder, so everyone who opens the same
 // root folder (on any PC) sees the same list. Settings below stay on this PC.
@@ -1903,6 +1939,8 @@ function settingsMenu(btn){
     {label: tick(S.chatsPos === 'top') + 'Tabs across the top', run: () => { S.chatsPos = 'top'; cBar(); saveAll(); }});
   items.push('-', {head: 'which side claude sits on'}, {label: tick(S.side === 'right') + 'Claude on the right', run: () => { S.side = 'right'; afterPanes(); }},
     {label: tick(S.side === 'left') + 'Claude on the left', run: () => { S.side = 'left'; afterPanes(); }});
+  items.push('-', {head: 'motion when you move through folders'}, {label: tick(motionMs() === MOTION.full) + 'Smooth', run: () => { S.motion = 'full'; saveAll(); }},
+    {label: tick(S.motion === 'quick') + 'Quick', run: () => { S.motion = 'quick'; saveAll(); }}, {label: tick(S.motion === 'off') + 'Off', run: () => { S.motion = 'off'; saveAll(); }});
   items.push('-', {head: 'when loom starts'}, {label: tick(S.boardStart) + 'Open on the board', run: () => { S.boardStart = true; saveAll(); }},
     {label: tick(!S.boardStart) + 'Open where I left off', run: () => { S.boardStart = false; saveAll(); }});
   items.push('-', {head: 'root folder'}, {head: HOME || 'none chosen'}, {label: 'Choose a different root folder...', run: chooseRoot});
