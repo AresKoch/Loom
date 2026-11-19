@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn, execFile } = require('child_process');
+const { HEAVY_DIRS } = require('./skip');
 
 // What each panel mode lets Claude do. Nothing here can pop a prompt, so
 // anything a mode does not allow is simply refused and reported back.
@@ -218,7 +219,34 @@ function create({ getRoot, claudePath }) {
     const me = child;
     let buf = '', errText = '', finished = false, session = sessionId || null, sawText = false;
 
-    const finish = ev => { if (finished) return; finished = true; if (child === me) child = null; emit({ t: 'done', session, ...ev }); };
+    // Files saved this turn, found two ways so a save is never missed: the Write/Edit tool calls,
+    // and a watch on the root folder for anything a command made.
+    const started = Date.now(), pending = new Map(), known = new Set(), timers = new Map();
+    let watcher = null;
+    try {
+      watcher = fs.watch(root, { recursive: true }, (kind, name) => {
+        if (!name || finished) return;
+        const full = path.join(root, String(name));
+        if (path.relative(root, full).split(path.sep).some(seg => HEAVY_DIRS.has(seg))) return;
+        clearTimeout(timers.get(full));
+        timers.set(full, setTimeout(() => {
+          timers.delete(full);
+          fs.stat(full, (err, st) => {
+            if (err || !st.isFile() || st.mtimeMs < started - 2000 || known.has(full.toLowerCase())) return;
+            known.add(full.toLowerCase()); emit({ t: 'saved', path: full });
+          });
+        }, 400));
+      });
+      watcher.on('error', () => {});
+    } catch (e) { watcher = null; }
+    const finish = ev => {
+      if (finished) return;
+      // A write whose result never arrived still counts if the file is really there and fresh.
+      for (const [id, p] of pending) { try { if (fs.statSync(p).mtimeMs >= started - 2000) emit({ t: 'toolresult', id, error: false }); } catch (e) { /* not there */ } }
+      pending.clear(); finished = true; try { if (watcher) watcher.close(); } catch (e) { /* closed */ }
+      for (const t of timers.values()) clearTimeout(t);
+      if (child === me) child = null; emit({ t: 'done', session, ...ev });
+    };
     const line = raw => {
       let m; try { m = JSON.parse(raw); } catch (e) { return; }
       if (m.session_id) session = m.session_id;
@@ -238,11 +266,13 @@ function create({ getRoot, claudePath }) {
         for (const b of m.message.content) if (b.type === 'tool_use') {
           // For a tool that saves a file, pass the path along so the window can show where it went.
           const inp = b.input || {}, write = WRITERS.has(b.name), fp = write ? (inp.file_path || inp.notebook_path) : null;
-          emit({ t: 'tool', id: b.id, line: toolLine(b.name, inp), write: write && !!fp, path: fp ? path.resolve(root, String(fp)) : null });
+          const abs = fp ? path.resolve(root, String(fp)) : null;
+          if (write && abs){ pending.set(b.id, abs); known.add(abs.toLowerCase()); }
+          emit({ t: 'tool', id: b.id, line: toolLine(b.name, inp), write: write && !!fp, path: abs });
         }
       }
       else if (m.type === 'user' && m.message && Array.isArray(m.message.content)) {
-        for (const b of m.message.content) if (b.type === 'tool_result') emit({ t: 'toolresult', id: b.tool_use_id, error: !!b.is_error });
+        for (const b of m.message.content) if (b.type === 'tool_result'){ pending.delete(b.tool_use_id); emit({ t: 'toolresult', id: b.tool_use_id, error: !!b.is_error }); }
       }
       else if (m.type === 'result' || (m.stop_reason !== undefined && m.total_cost_usd !== undefined)) {
         const denials = (m.permission_denials || []).map(d => toolLine(d.tool_name, d.tool_input));

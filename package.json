@@ -1,7 +1,7 @@
 {
   "name": "loom",
   "productName": "Loom",
-  "version": "1.8.5",
+  "version": "1.8.6",
   "description": "A file browser with Claude Code and git built in. Folders flow left to right as wired columns.",
   "main": "main.js",
   "author": "Ares Kochendorfer",
