@@ -311,8 +311,9 @@ body:not([data-solo=files]) #cols{gap:22px}
 #viewseg{-webkit-app-region:no-drag}
 #viewseg button{padding:7px 17px;font-size:12px;letter-spacing:.1em}
 #viewseg{border-radius:9px}
-#bbtn,#gset,#gphone{padding:7px 13px;font-size:11.5px}
-#gphone{-webkit-app-region:no-drag}
+#bbtn,#gset,#gphone,#hsync{padding:7px 13px;font-size:11.5px}
+#gphone,#hsync{-webkit-app-region:no-drag}
+#hsync.busy{animation:hot 1.25s ease-in-out infinite;color:var(--hi)}
 
 /* claude pane */
 .cin{border-width:1px}
@@ -512,6 +513,8 @@ body[data-board="1"] #crumbs{visibility:hidden}
 #cmic:hover{border-color:var(--a1);color:var(--fg)}
 #cvoice.on{background:var(--a1);color:var(--on);border-color:transparent;font-weight:700}
 #cvoice.talking{animation:hot 1.25s ease-in-out infinite}
+.handoff{max-height:56vh;overflow:auto;margin:8px 0 16px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--code);color:var(--mid);user-select:text;line-height:1.6;font-size:12.5px}
+.dlg:has(.handoff){width:720px}
 #ver{position:fixed;right:0;bottom:0;height:30px;line-height:30px;padding:0 12px 0 22px;font-size:10.5px;letter-spacing:.06em;color:color-mix(in srgb,var(--dim) 70%,transparent);background:linear-gradient(90deg,transparent,var(--bg) 16px);z-index:35;cursor:default;user-select:none}
 #ver:hover{color:var(--mid)}
 #keys{padding-right:74px}
@@ -528,6 +531,7 @@ body[data-board="1"] #keys>span.bk:not(.r){display:inline}
   <div class="searchwrap"><input id="q" placeholder="find any folder or file" autocomplete="off" spellcheck="false"><div id="results"></div></div>
   <button class="cbtn" id="bbtn" title="The board: sticky notes and a jump into any project. Ctrl+B.">board</button>
   <span class="seg" id="viewseg" title="Click to show or hide a pane. Right click to show only that one. Ctrl+G is git, Ctrl+J is Claude."><button data-v="files">files</button><button data-v="git">git</button><button data-v="claude">claude</button></span>
+  <button class="cbtn" id="hsync" title="Write down what happened since the last sync and send it to your private sync repository, so Claude on your phone can pick up where you left off.">sync</button>
   <button class="cbtn" id="gphone" title="Work in this root folder from your phone, through the Code tab of the Claude app.">phone</button>
   <button class="cbtn" id="gset" title="Account, theme, layout and root folder">settings</button>
   <span id="clock"></span>
@@ -2003,6 +2007,51 @@ async function phoneLink(){
   toast('Phone link window opened. Look for "' + r.name + '" in the Code tab of the Claude app.');
 }
 $('gphone').onclick = phoneLink;
+// Sync: a written handoff to the phone. See sync.js for what goes into it.
+let syncing2 = false;
+async function syncNow(){
+  if (syncing2) return toast('Sync is still running.');
+  if (!HOME) return toast('Choose a root folder first.');
+  let st;
+  try { st = await call('syncStatus'); } catch (e) { return fail(e); }
+  if (!st.set){
+    const ok = await ask('Set up Sync for ' + baseName(HOME) + '?', [
+      'Sync writes down what happened since the last sync: your Loom chats, which files changed, commits and your sticky notes. It also keeps a map of what is in each project and a copy of its small text documents (CLAUDE.md, README, scope, decisions).',
+      'It sends that to one small private GitHub repository. Your project files themselves are not uploaded.',
+      'On your phone, open a Claude Code session on that repository and say "catch up".',
+      'You need an empty PRIVATE repository on GitHub first, for example one named loom-sync. Your chats go into it, so do not make it public.',
+    ], [['Cancel', null], ['I have the repository', true, true]]);
+    if (!ok) return;
+    const url = await askText('Address of your private sync repository', 'https://github.com/AresKoch/loom-sync', 'Connect');
+    if (!url) return;
+    toast('Connecting...');
+    try { await call('syncSetup', {url}); } catch (e) { return fail(e); }
+  }
+  syncing2 = true; const b = $('hsync'); b.classList.add('busy'); b.textContent = 'syncing';
+  const poll = setInterval(() => call('syncProgress').then(p => { if (p.step) toast(p.step + '...'); }).catch(() => {}), 1500);
+  let r = null, err = null;
+  try { r = await call('syncRun'); } catch (e) { err = e; }
+  clearInterval(poll); syncing2 = false; b.classList.remove('busy'); b.textContent = 'sync';
+  if (err) return fail(err);
+  $('toast').className = '';
+  const lines = [
+    r.claudeWrote ? 'Claude wrote the handoff and it is on GitHub.' : 'The raw notes are on GitHub.',
+    'Covered ' + plural(r.chats, 'chat') + ', ' + plural(r.changed, 'changed file') + ' and ' + r.repos + (r.repos === 1 ? ' repository' : ' repositories') + ' with activity, across ' + plural(r.projects, 'project') + '.',
+  ];
+  if (r.fromPhone.length) lines.push('Pulled in ' + plural(r.fromPhone.length, 'note') + ' from your phone: ' + r.fromPhone.join(', '));
+  for (const n of r.notes) lines.push(n);
+  lines.push('On your phone: Claude app, Code tab, new session on the sync repository, then say "catch up".');
+  const pickd = await ask('Synced', lines, [['Close', null], ['Read the handoff', 'read'], ['Open on GitHub', 'web', true]]);
+  if (pickd === 'web') call('syncWeb').catch(fail);
+  else if (pickd === 'read'){
+    const t = await call('syncLatest').catch(() => ({text: ''}));
+    const d = $('dlg'); d.textContent = ''; d.append(el('h3', '', 'LATEST.md'));
+    const pre = el('div', 'handoff'); pre.innerHTML = md(t.text || 'Nothing written yet.'); d.append(pre);
+    const bs = el('div', 'btns'); const okb = el('button', 'btn pri', 'Close'); okb.onclick = () => $('veil').classList.remove('on'); bs.append(okb); d.append(bs);
+    $('veil').classList.add('on'); okb.focus();
+  }
+}
+$('hsync').onclick = syncNow;
 $('cin').addEventListener('keydown', ev => {
   if (!appKey(ev)){
     if (ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); cSend(); }

@@ -5,6 +5,7 @@ const fs = require('fs');
 const { create, Problem } = require('./backend');
 const claudeLib = require('./claude');
 const gitLib = require('./git');
+const syncLib = require('./sync');
 
 if (process.env.FOLDERMAP_SHOT) {
   // Build self check runs beside a copy that may already be open, with its own scratch profile.
@@ -108,6 +109,7 @@ app.whenReady().then(() => {
   backend.startIndexing();
 
   const git = gitLib.create({ check: p => backend.check(p), root: () => backend.root(), Problem });
+  const sync = syncLib.create({ root: () => backend.root(), Problem });
   const actions = {
     // GIT tab. Every repository path is checked to be inside the root folder (see git.js).
     gitRepos: () => git.repos(),
@@ -150,6 +152,13 @@ app.whenReady().then(() => {
     boardGet: a => backend.boardGet(a),
     boardSave: a => backend.boardSave(a),
     zip: a => backend.zip(a),
+    // Sync: the written handoff between this PC and the phone (see sync.js).
+    syncStatus: () => sync.status(),
+    syncSetup: a => sync.setup(a),
+    syncRun: () => sync.run(),
+    syncProgress: () => sync.progress(),
+    syncWeb: async () => { const s = await sync.status(); if (s.url && /^https:\/\/github\.com\//.test(s.url)) await shell.openExternal(s.url.replace(/\.git$/, '')); return { ok: true }; },
+    syncLatest: async () => { const f = path.join(sync.dir(), 'LATEST.md'); return { text: fs.existsSync(f) ? fs.readFileSync(f, 'utf8').slice(0, 60000) : '' }; },
     dictate: () => backend.dictate(),
     appInfo: () => ({ version: app.getVersion() }),
     openRepo: async () => { await shell.openExternal('https://github.com/AresKoch/Loom/releases'); return { ok: true }; },

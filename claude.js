@@ -277,4 +277,4 @@ function create({ getRoot, claudePath }) {
   return { status, login, remote, send, stop, busy: () => !!child };
 }
 
-module.exports = { create, launch, cmdQuote, shimTarget };
+module.exports = { create, launch, cmdQuote, shimTarget, findClaude, MODES };

@@ -51,6 +51,10 @@ USING IT
   typing. Same as pressing the Windows key and H. VOICE ON / OFF at the top of
   the Claude pane makes Claude read its replies out loud. Voice and speed are
   under SETTINGS.
+- SYNC at the top writes a handoff of what you did since the last sync and
+  sends it to a private GitHub repository of your own (it asks for the address
+  the first time). On your phone, open that repository in the Claude app's
+  Code tab and say "catch up". Your project files are not uploaded.
 - PHONE at the top links this PC to the Claude app on your phone. A console
   window opens; the first time, answer y to its two questions. Then open the
   Code tab in the Claude app and pick the session named "Loom ...". Keep the

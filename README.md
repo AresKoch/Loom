@@ -18,6 +18,7 @@ Get **Loom-windows.zip** from the [latest release](../../releases/latest), unzip
 - **Files.** Pick a root folder. Hover a folder to look inside, or a file to preview it (text, code, PDF, pictures, SolidWorks parts). Copy, cut, paste, rename, drag to a USB drive, print.
 - **Claude.** Runs the Claude Code already installed on your PC, signed in with your own account. Three modes: look (read only), edit (may change files in the root folder), auto (may also run commands Claude Code judges safe).
 - **Talk and listen.** The mic button opens Windows voice typing in the Claude box, and "voice on" has Claude read its replies out loud. Pick the voice and speed in Settings.
+- **Sync.** The sync button writes down what happened since the last sync (your Loom chats, changed files, commits, sticky notes), has Claude turn it into a short handoff, and pushes it to one small private GitHub repository of your own. Open that repository in Claude on your phone and say "catch up". Notes written on the phone are pulled back in on the next sync. Your project files are not uploaded, only a map of what exists and the small text documents.
 - **Phone.** The phone button starts Claude Code's Remote Control in your root folder, so you can keep working in the same folders from the Code tab of the Claude app on your phone. The PC has to stay on.
 - **Follow the save.** When Claude writes a file, every folder on the way to it pulses in the tree and so does the wire. Click the "Writing ..." line in the chat to jump to the file.
 - **Git.** Changes with tick boxes and diffs, history, branches, and one fetch / pull / push button. Push always asks first. Discard moves the old copy to a trash folder instead of destroying it.
@@ -84,6 +85,7 @@ Plain node, no extra packages. They cover the root-folder check (including links
 
 ## Files
 
+- `sync.js`  the written handoff between this PC and the phone
 - `skip.js`  the one list of folders that search and the git pane do not crawl into
 - `main.js`  the app window and the list of things the window may ask for
 - `backend.js`  everything that touches the disk (listing, copy, move, trash, search, shared chats, previews)
