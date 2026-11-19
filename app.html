@@ -1624,7 +1624,7 @@ function saveChat(c){
   if (!c || !c.msgs.length) return;                       // an empty chat is not worth sharing yet
   const live = C.live;
   const msgs = c.msgs.filter(m => m !== live || m.parts.length);
-  call('chatSave', {chat: {id: c.id, title: c.title, at: c.at, session: c.session, sessionPc: c.sessionPc, startedBy: c.startedBy, msgs}})
+  call('chatSave', {chat: {id: c.id, title: c.title, at: c.at, session: c.session, sessionPc: c.sessionPc, sessionRoot: c.sessionRoot, startedBy: c.startedBy, msgs}})
     .then(r => { c._m = r._m; })
     .catch(e => { if (!saveWarned){ saveWarned = true; toast('Could not save the chat into the root folder, so it will not be shared: ' + e.message, true); } });
 }
@@ -1989,7 +1989,7 @@ function cSend(){
   const t = kbTargets();
   if (!c.msgs.length) c.title = text.replace(/\s+/g, ' ').slice(0, 60);
   // A chat last answered on another PC has no session here: carry the conversation over as text.
-  const elsewhere = !!c.msgs.length && (!c.session || (c.sessionPc && !same(c.sessionPc, ME.pc)));
+  const elsewhere = !!c.msgs.length && (!c.session || (c.sessionPc && !same(c.sessionPc, ME.pc)) || (c.sessionRoot && !same(c.sessionRoot, HOME)));
   const history = elsewhere ? chatHistory(c, c.msgs.length) : null;
   c.msgs.push({role: 'user', text, by: ME.user, ctx: (ME.user ? ME.user + ' · ' : '') + 'in ' + cur.name + (t.length ? ' · ' + plural(t.length, 'item') + ' selected' : '') + ' · ' + S.mode + (S.model ? ' · ' + label(MODELS, S.model) : '')});
   C.live = {role: 'ai', parts: []}; c.msgs.push(C.live); c.at = Date.now();
@@ -2004,7 +2004,7 @@ function cSend(){
 fm.claude.onEvent(ev => {
   if (ev.t === 'usage'){ S.usage = {windows: {...((S.usage && S.usage.windows) || {}), ...ev.windows}, at: Date.now()}; drawUsage(); return; }
   const m = C.live, c = C.liveChat;
-  if (ev.t === 'init'){ if (ev.session && c){ c.session = ev.session; c.sessionPc = ME.pc; } return; }
+  if (ev.t === 'init'){ if (ev.session && c){ c.session = ev.session; c.sessionPc = ME.pc; c.sessionRoot = HOME; } return; }
   if (!m || !c){ if (ev.t === 'done'){ C.busy = false; cBar(); } return; }
   if (ev.t === 'text'){
     const last = m.parts[m.parts.length - 1];
@@ -2014,7 +2014,7 @@ fm.claude.onEvent(ev => {
   else if (ev.t === 'saved'){ C.ranTool = true; m.parts.push({k: 'tool', id: 'sv' + Date.now() + Math.random(), line: 'Saved ' + ev.path.split(/[\\/]/).pop(), write: true, path: ev.path, state: 'ok'}); touch(ev.path); cDrawLive(); }
   else if (ev.t === 'toolresult'){ const p = m.parts.find(x => x.k === 'tool' && x.id === ev.id); if (p){ p.state = ev.error ? 'err' : 'ok'; if (p.write && !ev.error) touch(p.path); cDrawLive(); } }
   else if (ev.t === 'done'){
-    if (ev.session){ c.session = ev.session; c.sessionPc = ME.pc; }
+    if (ev.session){ c.session = ev.session; c.sessionPc = ME.pc; c.sessionRoot = HOME; }
     if (ev.text) m.parts.push({k: 'text', text: ev.text});
     for (const p of m.parts) if (p.k === 'tool' && !p.state) p.state = 'err';
     const wrote = new Set(m.parts.filter(p => p.k === 'tool' && p.write && p.state === 'ok').map(p => winPath(p.path).toLowerCase())).size;
